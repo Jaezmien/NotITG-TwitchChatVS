@@ -113,6 +113,7 @@
             --
 
             local t = {}
+            local active = 'Activated Mods:'
             for i,v in pairs(tcvs_game_activatedMods) do
 
                 if b>=v[2] then
@@ -121,8 +122,10 @@
 
                         if v[1]==1 then
                             GAMESTATE:ApplyModifiers('*1 '.. v[4] ..' '.. v[3])
+                            active = active..'\n '.. v[4] ..' '.. v[3]
                         else
                             GAMESTATE:ApplyModifiers('*1 '.. v[3] ..' flip, *1 '.. v[4] ..' invert')
+                            active = active..'\n '.. v[3] ..' flip, *1 '.. v[4] ..' invert'
                         end
                         table.insert(t,v)
 
@@ -135,10 +138,19 @@
             end
             tcvs_game_activatedMods = t
 
+            tcvs_game_modList:settext(active)
+
             --
 
             self:cmd('sleep,0.02;queuecommand,Update')
         end"
+    />
+
+    <ZZ
+        Type="BitmapText"
+        Font="_misoreg white"
+        Var="tcvs_game_modList"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.3+10;zoom,0.4;vertalign,top;shadowlength,1"
     />
 
 </children> </ActorFrame>

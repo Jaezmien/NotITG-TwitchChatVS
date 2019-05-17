@@ -17,7 +17,7 @@ const twitchOAuth = ''
 // this is the token limit of each user
 // they can't put more mods after this
 // no exception
-const tokenLimit=5;
+const tokenLimit=5; // set anywhere below 1 for no limit
 
 // disable heartbeat message (if you want to, nothing's gonna break, it'll only show error messages)
 const disableHeartBeatMSG=true
@@ -499,7 +499,9 @@ Twitch.on("chat", (channel, userstate, message, self) => {
                 modVote[userstate.username] = 1;
             }
 
-            if(modVote[userstate.username] <= tokenLimit || userstate.username == twitchUsername) {
+            let tok = tokenLimit<1 ? true : modVote[userstate.username] <= tokenLimit;
+
+            if(tok || userstate.username == twitchUsername) {
                 let n = m.replace('!mod ','').split(' ')
                 if(n.length==1 && n[0].startsWith('switcheroo_')) {
 
