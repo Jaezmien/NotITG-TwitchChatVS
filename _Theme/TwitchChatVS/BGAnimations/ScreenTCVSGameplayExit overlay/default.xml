@@ -1,0 +1,22 @@
+<ActorFrame><children>
+	<Aux
+		OnCommand="%function(self)
+
+			GAMESTATE:SetExternal(0,TwitchChatVS.flag)
+			GAMESTATE:SetExternal(1,1)
+			GAMESTATE:SetExternal(61,1) -- vote kill button
+
+			self:queuecommand('Update')
+
+		end"
+		UpdateCommand="%function(self)
+		
+			if GAMESTATE:GetExternal(61)==0 then
+
+				SCREENMAN:SetNewScreen('ScreenTitleMenu')
+
+			end
+
+		end"
+	/>
+</children></ActorFrame>

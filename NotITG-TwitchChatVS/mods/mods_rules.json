@@ -1,0 +1,174 @@
+{
+
+    "disabled": [
+        "passmark",
+        "judgescale",
+        "randomspeed",
+        "mirror",
+        "left",
+        "right",
+        "shuffle",
+        "supershuffle",
+        "softshuffle",
+        "spookyshuffle",
+        "smartblender",
+        "swapleftright",
+        "swapupdown",
+        "noholds",
+        "holdstorolls",
+        "norolls",
+        "nomines",
+        "little",
+        "wide",
+        "big",
+        "quick",
+        "bmrize",
+        "skippy",
+        "mines",
+        "echo",
+        "stomp",
+        "planted",
+        "floored",
+        "twister",
+        "nojumps",
+        "nohands",
+        "noquads",
+        "nostretch",
+        "cover",
+        "reversetype",
+        "zbuffer",
+        "halgun"
+    ],
+    "disabledREGEX": [
+        "period|offset|speed|step",
+        "tantornado\\w*",
+        "pulse(inn|out)er",
+        "drawsize(back)?",
+        "\\d(.\\d+)?(x|c|m)",
+        "(confusion\\woffset)|(confusionoffset)",
+        "blink\\w*",
+        "globalmodtimer(mult|offset)?"
+    ],
+
+    "allowed": [
+		"dizzy",
+		"twirl",
+		"roll",
+		"pulse",
+		"blind",
+        "arrowpathsize",
+        "arrowpathgrain",
+        "arrowpathgranulate",
+        "asymptote",
+        "hidemines",
+        "hideholds",
+        "arrowcull",
+        "hidenoteflashes",
+        "grain",
+        "boost",
+        "brake",
+        "wave",
+        "expand",
+        "mini",
+        "attenuatex",
+        "tipsy",
+        "stealthpastreceptors",
+        "randomvanish",
+        "screenfilter",
+        "split",
+        "alternate",
+        "cross",
+        "centered",
+        "centered2"
+    ],
+    "allowedREGEX": [
+		"confusion[xyz]",
+		"move[xyz]",
+        "arrowpath[0-3]?",
+        "noteskew[0-3]?",
+        "arrowpathdraw(distance|size)(back|front)?",
+        "arrowpath(gir|wid)th",
+        "cubic[xyz]",
+        "wireframe(girth)?[0-3]?",
+        "texturefilteroff[0-3]?",
+        "drunk[xyz]?",
+        "zigzag[z]?",
+        "square[z]?",
+        "bounce[z]?",
+        "parabola[xyz]",
+        "beat[yz]?",
+        "spiral[xyz]",
+        "shrinklinear[xyz]?",
+        "shrinkmult[xyz]?",
+        "randomise(mirror)?",
+        "vanish(size)",
+        "reverse[0-3]?",
+        "dark[0-3]?",
+        "bumpy[x]?"
+    ],
+
+    "allowSpecialCase": {
+
+        "(sin|cos)clip": {
+            "maxCap": 200,
+            "minCap": 0
+        },
+        "cosec": {
+            "maxCap": 200,
+            "minCap": 0
+        },
+
+        "tan(digital|tipsy|bumpy[x]?)": {
+            "maxCap": 50,
+            "minCap": -50
+        },
+
+        "digital[z]?": {
+            "maxCap": 100,
+            "minCap": -100
+        },
+        "sawtooth[z]?": {
+            "maxCap": 100,
+            "minCap": -100
+        },
+
+        "zoom[xyz]": {
+            "maxCap": 250,
+            "minCap": 50
+        },
+
+        "(tiny[xy]?[0-3]?)|(mini)": {
+            "maxCap": 150,
+            "minCap": -150
+        },
+
+        "tornado": {
+            "maxCap": 75,
+            "minCap": 0
+        },
+
+        "boomerang": {
+            "maxCap": 1,
+            "minCap": 0
+        },
+
+        "stealth[0-3]?": {
+            "maxCap":80,
+            "minCap":0
+        },
+        "(sudden|hidden)(offset)?": {
+            "maxCap":80,
+            "minCap":0
+        },
+		"(distant|hallway|space|incoming)?": {
+			"maxCap":100,
+			"minCap":-100
+		},
+		"rotation[xyz]": {
+			"maxCap":45,
+			"minCap":-45
+		}
+
+    }    
+
+}

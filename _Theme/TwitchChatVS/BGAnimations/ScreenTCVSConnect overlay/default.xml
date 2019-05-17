@@ -1,0 +1,59 @@
+<ActorFrame><children>
+	<A Type="Quad" Var="Edward" InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y;zoomto,SCREEN_WIDTH,SCREEN_HEIGHT;diffuse,0,0,0,1;sleep,99999"/>
+	<B
+		File="chog"
+		InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y+8;vertalign,bottom;bounce;effectmagnitude,0,-20,0;effectclock,bgm;effectperiod,1;zoom,0.4"
+	/>
+	<B
+		Font="_misoreg"
+		Text=""
+		InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y;vertalign,top;shadowlength,0"
+		OnCommand="%function(self)
+
+			if TwitchChatVS.isConnected()==true then
+				self:settext('Disconnecting!')
+			else
+				self:settext('Connecting!')
+			end
+
+			TwitchChatVS.ConnectScreen.lastSeenState = TwitchChatVS.isConnected()
+
+			GAMESTATE:SetExternal(1,1) -- send
+			GAMESTATE:SetExternal(62,1)
+
+			GAMESTATE:SetExternal(0,TwitchChatVS.flag)
+			--
+			self:queuecommand('Update')
+
+		end"
+		UpdateCommand="%function(self)
+			-- check
+
+			--[[
+				ok so this is how we're going to do this
+
+				0 = application flag
+				1 = send/recieve flag (0 = none, 1 = send, 2 = recieve)
+				2 = screen
+				3-60 = data
+				61 = reset shit (set to 1 and let shit do stuffs automatically)
+				62 = connect/disconnect (just set it to 1)
+				63 = isConnected flag
+			]]
+
+			if GAMESTATE:GetExternal(0) == TwitchChatVS.flag and GAMESTATE:GetExternal(1)==2 then
+
+				if (GAMESTATE:GetExternal(63)==1) ~= TwitchChatVS.ConnectScreen.lastSeenState then
+
+					Edward:stoptweening()
+					SCREENMAN:SystemMessage(TwitchChatVS.isConnected() and 'Connected!' or 'Disconnected!')
+					SCREENMAN:SetNewScreen('ScreenTitleMenu')
+
+				end
+
+			end
+
+			self:cmd('sleep,0.02;queuecommand,Update')
+		end"
+	/>
+</children></ActorFrame>

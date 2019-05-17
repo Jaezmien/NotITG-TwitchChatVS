@@ -1,0 +1,145 @@
+<ActorFrame> <children>
+
+    <Aux
+        InitCommand="%function(self)
+            GAMESTATE:SetExternal(0,0)
+            --
+            tcvs_game_queue = {}
+            tcvs_game_activatedMods = {} -- {when,mod string}
+        end"
+        OnCommand="sleep,1;queuecommand,Shit"
+        ShitCommand="%function(self)
+        
+            GAMESTATE:SetExternal(1,1)
+            GAMESTATE:SetExternal(2,2) -- screen: game
+            GAMESTATE:SetExternal(3,1) -- start voting
+
+            GAMESTATE:SetExternal(0,TwitchChatVS.flag)
+
+        end"
+    />
+
+    <Aux
+        OnCommand="queuecommand,Update"
+        UpdateCommand="%function(self)
+
+            if GAMESTATE:GetExternal(63)==0 then
+                SCREENMAN:SystemMessage('Console Disconnected')
+                SCREENMAN:SetNewScreen('ScreenLove')
+            end
+
+            if SCREENMAN:GetTopScreen():GetChild('Overlay'):GetHidden() then
+                SCREENMAN:GetTopScreen():GetChild('Overlay'):hidden(0)
+            end
+
+            --
+
+            local b = GAMESTATE:GetSongTime()
+
+            if GAMESTATE:GetExternal(1)==2 and GAMESTATE:GetExternal(2)==2 then
+                
+                if GAMESTATE:GetExternal(3)==4 then
+
+                    local g = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+                    local function decodeChar(s) -- pos to char
+                        for i=1,string.len(g) do
+                            if i==s then
+                                return string.sub(g,i,i)
+                            end
+                        end
+                        return nil
+                    end
+                    
+                    local m = ''
+                    local len = GAMESTATE:GetExternal(4)
+                    local per = GAMESTATE:GetExternal(5) * ( GAMESTATE:GetExternal(6)==1 and -1 or 1 )
+
+                    for i=7,6+len do
+                        m=m..decodeChar(GAMESTATE:GetExternal(i))
+                    end
+
+                    table.insert(tcvs_game_queue,{1,b,m,per})
+
+                    for i=1,6+len do
+                        GAMESTATE:SetExternal(i,0)
+                    end
+
+                elseif GAMESTATE:GetExternal(3)==5 then
+
+                    local flp = GAMESTATE:GetExternal(4) * ( GAMESTATE:GetExternal(5)==1 and -1 or 1 )
+                    local inv = GAMESTATE:GetExternal(6) * ( GAMESTATE:GetExternal(7)==1 and -1 or 1 )
+
+                    table.insert(tcvs_game_queue,{2,b,flp,inv})
+
+                    for i=1,7 do
+                        GAMESTATE:SetExternal(i,0)
+                    end
+
+                end
+
+            end
+
+            --
+
+            if table.getn(tcvs_game_activatedMods) < 6 then
+
+                local r = 0
+                for i,v in pairs(tcvs_game_queue) do
+                    table.insert(tcvs_game_activatedMods,v)
+                    --
+                    if v[1]==1 then
+                        SCREENMAN:SystemMessage('Activated '.. v[4] ..'% '.. v[3] ..'!')
+                    else
+                        SCREENMAN:SystemMessage('Activated Switcheroo!')
+                    end
+                    --
+                    r=r+1
+                    if table.getn(tcvs_game_activatedMods) > 4 then
+                        break
+                    end
+                end
+
+                for i=1,r do table.remove(tcvs_game_queue,1) end
+                
+            end
+
+            --
+
+            GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype')
+
+            --
+            GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x') -- idk how to make this into an option you can change (easily)
+            --
+
+            local t = {}
+            for i,v in pairs(tcvs_game_activatedMods) do
+
+                if b>=v[2] then
+
+                    if b<=v[2]+16 then
+
+                        if v[1]==1 then
+                            GAMESTATE:ApplyModifiers('*1 '.. v[4] ..' '.. v[3])
+                        else
+                            GAMESTATE:ApplyModifiers('*1 '.. v[3] ..' flip, *1 '.. v[4] ..' invert')
+                        end
+                        table.insert(t,v)
+
+                    end
+
+                else
+                    table.insert(t,v)
+                end
+
+            end
+            tcvs_game_activatedMods = t
+
+            --
+
+            self:cmd('sleep,0.02;queuecommand,Update')
+        end"
+    />
+
+</children> </ActorFrame>
+

@@ -1,0 +1,284 @@
+<ActorFrame><children>
+    <Aux
+        InitCommand="%function(self)
+
+            tcvs_lobby_speedmod = 2.5
+            tcvs_lobby_set = false
+            
+            GAMESTATE:SetExternal(1,1)
+            GAMESTATE:SetExternal(2,1) -- screen: lobby
+            GAMESTATE:SetExternal(3,1) -- start voting
+
+            GAMESTATE:SetExternal(0,TwitchChatVS.flag)
+            
+        end"
+        OnCommand="queuecommand,Update"
+        UpdateCommand="%function(self)
+        
+            if GAMESTATE:GetExternal(63)==0 then
+                SCREENMAN:SystemMessage('Console Disconnected')
+                SCREENMAN:SetNewScreen('ScreenLove')
+            end
+
+            --
+
+            if GAMESTATE:GetExternal(1)==2 and GAMESTATE:GetExternal(2)==2 then
+                local n = GAMESTATE:GetExternal(3)
+                local a = GAMESTATE:GetExternal(4)
+                _G['tcvs_lobby_song'..n]:settext(n..' - [' .. tcvs_lobby_songs[n]:GetDisplayMainTitle() .. '] ('..a..')')
+                GAMESTATE:SetExternal(1,0)
+                GAMESTATE:SetExternal(2,0)
+                GAMESTATE:SetExternal(3,0)
+                GAMESTATE:SetExternal(4,0)
+            end
+            if GAMESTATE:GetExternal(1)==2 and GAMESTATE:GetExternal(2)==1 and GAMESTATE:GetExternal(3)==1 and GAMESTATE:GetExternal(4)==3 and not tcvs_lobby_set then
+                tcvs_lobby_set=true
+                local v = GAMESTATE:GetExternal(5)
+                for i=1,5 do
+                    if i~=v then
+                        local s = _G['tcvs_lobby_song'..i]
+                        s:decelerate(1)
+                        s:addx(-SCREEN_WIDTH)
+                    else
+                        _G['tcvs_lobby_song'..i]:rainbow()
+                    end
+                end
+                --
+                GAMESTATE:JoinPlayer(0)
+                GAMESTATE:JoinPlayer(1)
+                --
+                --[[GAMESTATE:ApplyGameCommand('Song,'..tcvs_lobby_songs[v]:GetDisplayFullTitle())
+                local f = {'Beginner','Easy','Medium','Hard','Challenge','Edit'}
+                local st = ''
+                for i,s in pairs( tcvs_lobby_songs[v]:GetAllSteps() ) do
+                    if s:GetDifficulty()==5 then
+                        break;
+                    end
+                    st = f[s:GetDifficulty()+1]
+                end
+                GAMESTATE:ApplyGameCommand('Style,Versus')
+                GAMESTATE:ApplyGameCommand('Steps,'..st)
+                GAMESTATE:ApplyGameCommand('PlayMode,Regular')]]
+                tcvs_song = tcvs_lobby_songs[v]
+                --
+                tcvs_song_difficulties = {}
+                for i,v in pairs(tcvs_song:GetAllSteps()) do
+                    if v:GetDifficulty()~=5 and v:GetStepsType()==0 then
+                        table.insert(tcvs_song_difficulties,v)
+                        Trace('Difficulty-'..v:GetDifficulty())
+                    end
+                end
+                --
+                table.sort(tcvs_song_difficulties, function(a,b) return a:GetDifficulty() < b:GetDifficulty(); end)
+                --
+                GAMESTATE:ApplyGameCommand('Song,'..tcvs_lobby_songs[v]:GetDisplayFullTitle())
+                --
+                GAMESTATE:SetExternal(1,0)
+                GAMESTATE:SetExternal(2,0)
+                GAMESTATE:SetExternal(3,0)
+                GAMESTATE:SetExternal(4,0)
+                GAMESTATE:SetExternal(5,0)
+                --
+                MESSAGEMAN:Broadcast('Fade')
+                return
+            end
+
+            --
+
+            self:cmd('sleep,0.02;queuecommand,Update')
+        end"
+    />
+
+    <!-- water merk -->
+    <Layer
+        File="cow.png"
+        InitCommand="xy,SCREEN_WIDTH,SCREEN_HEIGHT+10;horizalign,right;vertalign,bottom"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="chegg told me to put myself here.::so hai there, am melody::i did most of the code here"
+        InitCommand="xy,SCREEN_CENTER_X*1.7,SCREEN_CENTER_Y*1.18;rotationz,-5;shadowlength,1;zoom,0.4;wag;effectmagnitude,0,0,4"
+    />
+
+    <!-- peepee -->
+    <Layer
+        Font="_misobold white"
+        Text="Voting has started!"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.25;shadowlength,1"
+        OnCommand="%function(self)
+            tcvs_lobby_spinTimer=0
+            tcvs_lobby_endCurr = 2
+            self:queuecommand('Update')
+        end"
+        UpdateCommand="%function(self)
+            self:zoom(1 + math.abs( math.sin(tcvs_lobby_spinTimer)*0.08 ))
+            tcvs_lobby_spinTimer=tcvs_lobby_spinTimer+0.1
+            self:cmd('sleep,0.02;queuecommand,Update')
+        end"
+    />
+
+    <!-- timer -->
+    <Layer
+        Font="_misobold white"
+        Text="69"
+        InitCommand="xy,10,0;horizalign,left;vertalign,top;zoom,2"
+        OnCommand="queuecommand,Set" SetCommand="%function(self)
+            tcvs_lobby_timer=TwitchChatVS.VotingScreen.votingTime
+            --tcvs_lobby_timer=5
+
+            self:settext(tcvs_lobby_timer)
+
+            self:sleep(1)
+            self:queuecommand('Update')
+        end"
+        UpdateCommand="%function(self)
+
+            tcvs_lobby_timer=tcvs_lobby_timer-1
+
+            if (tcvs_lobby_timer<1) then
+            
+                MESSAGEMAN:Broadcast('Override')
+
+            else
+
+                if tcvs_lobby_timer==9 then
+                    self:diffuse(1,0.5,0.5,1)
+                end
+
+                self:settext(tcvs_lobby_timer)
+
+                self:cmd('zoom,2.4;decelerate,0.2;zoom,2')
+
+                self:cmd('sleep,1;queuecommand,Update')
+
+            end
+            
+        end"
+        StepP1Action1PressMessageCommand="%function(self)
+            self:stoptweening()
+            tcvs_lobby_endCurr=3
+            GAMESTATE:SetExternal(4,1)
+            MESSAGEMAN:Broadcast('Override')
+        end"
+        StepP1Action2PressMessageCommand="%function(self)
+            self:stoptweening()
+            tcvs_lobby_endCurr=3
+            GAMESTATE:SetExternal(4,2)
+            MESSAGEMAN:Broadcast('Override')
+        end"
+        StepP1Action3PressMessageCommand="%function(self)
+            self:stoptweening()
+            tcvs_lobby_endCurr=3
+            GAMESTATE:SetExternal(4,3)
+            MESSAGEMAN:Broadcast('Override')
+        end"
+        StepP1Action4PressMessageCommand="%function(self)
+            self:stoptweening()
+            tcvs_lobby_endCurr=3
+            GAMESTATE:SetExternal(4,4)
+            MESSAGEMAN:Broadcast('Override')
+        end"
+        StepP1Action5PressMessageCommand="%function(self)
+            self:stoptweening()
+            tcvs_lobby_endCurr=3
+            GAMESTATE:SetExternal(4,5)
+            MESSAGEMAN:Broadcast('Override')
+        end"
+        OverrideMessageCommand="%function(self)
+            self:settext('0')
+            self:accelerate(0.4)
+            self:x(-40)
+            --
+            GAMESTATE:SetExternal(1,1)
+            GAMESTATE:SetExternal(2,1) -- send
+            GAMESTATE:SetExternal(3,tcvs_lobby_endCurr) -- finish timer
+        end"
+    />
+
+    <!-- voting shits -->
+    <Aux
+        OnCommand="queuecommand,Set"
+        SetCommand="%function(self)
+            local s = SONGMAN:GetAllSongs()
+            --
+            if table.getn(s)<8 then
+                SCREENMAN:SystemMessage('Not enough songs! At least 9 songs are needed')
+                SCREENMAN:SetNewScreen('ScreenLove')
+            end
+            --
+            local function r(t)
+                local nt=t
+                for i=table.getn(nt),1,-1 do
+                    local r = math.random(i)
+                    nt[i],nt[r]=nt[r],nt[i]
+                end
+                return nt
+            end
+            --
+            s=r(s)
+            tcvs_lobby_songs = {s[1], s[2], s[3], s[4], s[5]}
+            for i=1,5 do
+                _G['tcvs_lobby_song'..i]:settext(i..' - [' .. tcvs_lobby_songs[i]:GetDisplayMainTitle() .. '] (0)')
+            end
+        end"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="1 - [pee pee poo poo moo]"
+        Var="tcvs_lobby_song1"
+        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*0);horizalign,left;shadowlength,2"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="2 - [pee pee poo poo moo]"
+        Var="tcvs_lobby_song2"
+        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*1);horizalign,left;shadowlength,2"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="3 - [pee pee poo poo moo]"
+        Var="tcvs_lobby_song3"
+        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*2);horizalign,left;shadowlength,2"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="4 - [pee pee poo poo moo]"
+        Var="tcvs_lobby_song4"
+        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*3);horizalign,left;shadowlength,2"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="5 - [pee pee poo poo moo]"
+        Var="tcvs_lobby_song5"
+        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*4);horizalign,left;shadowlength,2"
+    />
+
+    <!-- speedmod option -->
+    <Layer
+        Font="_misoreg"
+        Text="SpeedMod::2.5x"
+        InitCommand="xy,SCREEN_CENTER_X*1.8,SCREEN_CENTER_Y*0.1;shadowlength,1"
+        StepP1LeftPressMessageCommand="%function(self)
+            tcvs_lobby_speedmod=tcvs_lobby_speedmod-0.1
+            self:settext('SpeedMod\n'..tcvs_lobby_speedmod..'x')
+        end"
+        StepP1RightPressMessageCommand="%function(self)
+            tcvs_lobby_speedmod=tcvs_lobby_speedmod+0.1
+            self:settext('SpeedMod\n'..tcvs_lobby_speedmod..'x')
+        end"
+    />
+
+    <!-- fade -->
+    <Layer
+        Type="Quad"
+        InitCommand="zoom,9999;diffuse,0,0,0,0"
+        FadeMessageCommand="%function(self)
+            GAMESTATE:JoinPlayer(0)
+            GAMESTATE:JoinPlayer(1)
+            self:cmd('sleep,2;decelerate,1;diffusealpha,1;sleep,1;queuecommand,NewScreen')
+        end"
+        NewScreenMessageCommand="%function(self)
+            GAMESTATE:ApplyGameCommand('screen,ScreenTCVSDifficulty')
+        end"
+    />
+</children></ActorFrame>

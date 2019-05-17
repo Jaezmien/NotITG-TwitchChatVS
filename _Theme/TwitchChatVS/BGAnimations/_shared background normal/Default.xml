@@ -1,0 +1,48 @@
+<ActorFrame	OnCommand="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y"
+	InitCommand="%function(self)
+		if not tcvs_bgspin then tcvs_bgspin = {} end
+	end"
+><children>
+	<ActorFrame Command="queuecommand,Set" SetCommand="%function() crazy = 0 end" />
+	<Layer Type="Quad" InitCommand="zoomto,SCREEN_WIDTH,SCREEN_HEIGHT;"
+		OnCommand="diffuseshift;effectcolor1,0,213/255,1,1;effectcolor2,67/255,224/255,1,1;effectclock,bgm;effectperiod,8"
+	/>
+	<!-- bepis -->
+	<Layer
+		File="box3tex"
+		OnCommand="%function(self)
+			self:customtexturerect(0,0,30,30)
+			self:texcoordvelocity(-1,1)
+			local mx = math.max(DISPLAY:GetDisplayWidth(),DISPLAY:GetDisplayHeight())*1.5
+			self:zoomto(mx,mx)
+			self:diffusealpha(0.1)
+			--
+			tcvs_bgspin[tostring(self)] = 0
+			self:queuecommand('Update')
+		end"
+		UpdateCommand="%function(self)
+			tcvs_bgspin[tostring(self)] = math.mod(tcvs_bgspin[tostring(self)],360)+0.2
+			self:rotationz(tcvs_bgspin[tostring(self)])
+			self:cmd('sleep,0.01;queuecommand,Update')
+		end"
+	/>
+
+	<Layer
+		File="box4tex"
+		OnCommand="%function(self)
+			self:customtexturerect(0,0,8,8)
+			self:texcoordvelocity(2,-1)
+			local mx = math.max(DISPLAY:GetDisplayWidth(),DISPLAY:GetDisplayHeight())*1.5
+			self:zoomto(mx,mx)
+			self:diffusealpha(0.3)
+			--
+			tcvs_bgspin[tostring(self)] = 0
+			self:queuecommand('Update')
+		end"
+		UpdateCommand="%function(self)
+			tcvs_bgspin[tostring(self)] = math.mod(tcvs_bgspin[tostring(self)],360)-0.3
+			self:rotationz(tcvs_bgspin[tostring(self)])
+			self:cmd('sleep,0.01;queuecommand,Update')
+		end"
+	/>
+</children></ActorFrame>

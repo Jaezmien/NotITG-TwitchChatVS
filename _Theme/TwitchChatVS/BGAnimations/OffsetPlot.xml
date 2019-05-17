@@ -1,0 +1,443 @@
+<ActorFrame InitCommand="%function(self)
+	function math.round(num, numDecimalPlaces)
+	  local mult = 10^(numDecimalPlaces or 0)
+	  return math.floor(num * mult + 0.5) / mult
+	end
+	
+	oplot_plotWidth, oplot_plotHeight = 301,120
+	oplot_dotDims, oplot_plotMargin = 2, 4
+	oplot_maxOffset = math.round(PREFSMAN:GetPreference('JudgeWindowScale')*PREFSMAN:GetPreference('JudgeWindowSecondsBoo')*1000)
+	
+	oplot_songs = STATSMAN:GetCurStageStats():GetPossibleSongs()
+	
+	oplot_finalSecond = 0
+	for i=1,table.getn(oplot_songs) do
+		oplot_finalSecond = oplot_finalSecond + oplot_songs[i]:StepsLengthSeconds()
+	end
+	
+	--so we're going to need to work out Start and End times for each segment using the list of songs
+	--we have a beat, and we have which song it's in
+	
+	function oplot_cumulativeTime(beat,song)
+		local starttime = 0
+		if GAMESTATE:IsCourseMode() then
+			if song > 0 then
+				for i=1,song do
+					starttime = starttime+oplot_songs[i]:StepsLengthSeconds()
+				end
+			end
+			return starttime + oplot_songs[song+1]:GetElapsedTimeFromBeat(beat)
+		else
+			return starttime + GAMESTATE:GetCurrentSong():GetElapsedTimeFromBeat(beat)
+		end
+	end
+	
+	
+	
+	
+	function oplot_fitX(beat,song)	-- Scale time values to fit within plot width.
+		return oplot_cumulativeTime(beat,song)/oplot_finalSecond*oplot_plotWidth - oplot_plotWidth/2
+	end
+	function oplot_fitXTime(t)	-- Scale time values to fit within plot width.
+		return t/oplot_finalSecond*oplot_plotWidth - oplot_plotWidth/2
+	end
+
+	function oplot_fitY(y)	-- Scale offset values to fit within plot height
+		return -1*y/oplot_maxOffset*oplot_plotHeight/2
+	end
+	
+	oplot_hidden = {1,1}
+	
+	function offsetToJudgeColor(offset,scale)
+		local offset = math.abs(offset)
+		if not scale then
+			scale = PREFSMAN:GetPreference('JudgeWindowScale')
+		end
+		if offset <= scale*PREFSMAN:GetPreference('JudgeWindowSecondsMarvelous') then
+			return 153/255,204/255,255/255,1
+		elseif offset <= scale*PREFSMAN:GetPreference('JudgeWindowSecondsPerfect') then
+			return 242/255,203/255,048/255,1
+		elseif offset <= scale*PREFSMAN:GetPreference('JudgeWindowSecondsGreat') then
+			return 134/255,249/255,168/255,1
+		elseif offset <= scale*PREFSMAN:GetPreference('JudgeWindowSecondsGood') then
+			return 196/255,133/255,255/255,1
+		elseif offset <= scale*PREFSMAN:GetPreference('JudgeWindowSecondsBoo') then
+			return 201/255,066/255,016/255,1
+		else
+			return 201/255,041/255,041/255,1
+		end
+	end
+	
+end"><children>
+	<!--xy,SCREEN_WIDTH*0.25-oplot_plotWidth/2,SCREEN_HEIGHT*0.5+56+oplot_plotHeight/2-->
+	<Layer Type="ActorFrame" OnCommand="xy,SCREEN_WIDTH*0.25+3,SCREEN_HEIGHT*0.65-1;hidden,1"
+	StepP1LeftPressMessageCommand="%function(self)
+		local pn = 1
+		if oplot_hidden[pn] == 1 then
+			self:hidden(0)
+		else
+			self:hidden(1)
+		end
+		oplot_hidden[pn] = oplot_hidden[pn]*-1
+	end"
+	><children>
+	
+		<!-- Background -->
+		<Layer Type="Quad" InitCommand="zoomto,305,263;diffuse,0,0,0,1"/>
+
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0;queuecommand,Make"
+		MakeCommand="%function(self)
+			
+			local vert = 0;
+			
+			if not GAMESTATE:IsCourseMode() then
+			
+				local s = GAMESTATE:GetCurrentSong()
+				local sc = s:GetSpellCards()
+				--spellcard table contains:
+					--StartBeat, EndBeat (float)
+					--Name (string)
+					--Color (table of rgba)
+				
+				local lab = s:GetLabels()
+				
+				self:SetNumVertices(table.getn(lab)*4 + table.getn(sc)*4)
+				
+				for i=1, table.getn(sc) do
+					
+					local x1 = oplot_fitX((sc[i].StartBeat))
+					local x2 = oplot_fitX((sc[i].EndBeat))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x1,y1,0)
+					self:SetVertexPosition(vert+1,x2,y1,0)
+					self:SetVertexPosition(vert+2,x2,y2,0)
+					self:SetVertexPosition(vert+3,x1,y2,0)
+					
+					for j=0,3 do
+						self:SetVertexColor(vert+j,sc[i].Color[1],sc[i].Color[2],sc[i].Color[3],sc[i].Color[4]*0.6)
+					end
+					
+					vert = vert+4
+				end
+				
+				for i=1, table.getn(lab) do 
+					
+					local x = oplot_fitX((lab[i].Beat))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x,y1,1)
+					self:SetVertexPosition(vert+1,x+1,y1,1)
+					self:SetVertexPosition(vert+2,x+1,y2,1)
+					self:SetVertexPosition(vert+3,x,y2,1)
+					
+					vert = vert+4
+				end
+				
+			else
+				
+				local lab = oplot_songs
+				
+				self:SetNumVertices(table.getn(lab)*4)
+				
+				for i=1, table.getn(lab) do 
+					
+					local x = oplot_fitXTime(oplot_cumulativeTime(0,i-1))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x,y1,1)
+					self:SetVertexPosition(vert+1,x+1,y1,1)
+					self:SetVertexPosition(vert+2,x+1,y2,1)
+					self:SetVertexPosition(vert+3,x,y2,1)
+					
+					vert = vert+4
+				end
+				
+			end
+			
+		end"
+		/>
+		
+		<!-- Center Bar -->
+		<Layer Type="Quad" OnCommand="zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,offsetToJudgeColor(0)" />
+		
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0;queuecommand,Make"
+		MakeCommand="%function(self)
+			local scale = PREFSMAN:GetPreference('JudgeWindowScale')
+			local fantabars = {
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsMarvelous'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsPerfect'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsGreat'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsGood'),
+			}
+			self:SetNumVertices(table.getn(fantabars)*8)
+			local vert = 0
+			for i=1, table.getn(fantabars) do 
+				--o[#o+1] = Def.Quad{InitCommand=cmd(y, oplot_fitY(tst[judge]*fantabars[i]); zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,byJudgment(bantafars[i]))}
+				--o[#o+1] = Def.Quad{InitCommand=cmd(y, oplot_fitY(-tst[judge]*fantabars[i]); zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,byJudgment(bantafars[i]))}
+				
+				self:SetVertexPosition(vert+0,-oplot_plotWidth/2-oplot_plotMargin/2,-oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+1,oplot_plotWidth/2+oplot_plotMargin/2,-oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+2,oplot_plotWidth/2+oplot_plotMargin/2,-oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+3,-oplot_plotWidth/2-oplot_plotMargin/2,-oplot_fitY(fantabars[i])+1,0)
+				
+				self:SetVertexPosition(vert+4,-oplot_plotWidth/2-oplot_plotMargin/2,oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+5,oplot_plotWidth/2+oplot_plotMargin/2,oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+6,oplot_plotWidth/2+oplot_plotMargin/2,oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+7,-oplot_plotWidth/2-oplot_plotMargin/2,oplot_fitY(fantabars[i]),0)
+				
+				for j=0,7 do
+					self:SetVertexColor(vert+j,offsetToJudgeColor((fantabars[i]/1000)+0.002))
+				end
+				
+				vert = vert+8
+			end
+			
+		end"
+		/>
+		
+		<Layer Type="Quad" InitCommand="zoomto,oplot_plotWidth+oplot_plotMargin,oplot_plotHeight+oplot_plotMargin;diffuse,0.1,0.1,0.1,0.8;"/>
+		
+		<!-- Convert noterows to timestamps and plot dots -->
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0.02;queuecommand,Make"
+		MakeCommand="%function(self)
+			local ss = STATSMAN:GetCurStageStats()
+			local pss = ss:GetPlayerStageStats(PLAYER_1)
+			local dvt = pss:GetOffsetVector()
+			local nrt = pss:GetNoteRowVector()
+			local nrs = pss:GetNoteSongVector()
+			
+			self:SetNumVertices(4*table.getn(nrt))
+			
+			local vert = 0;
+			for i=1,table.getn(nrt) do
+			
+				local x = oplot_fitX(nrt[i]/48,nrs[i])
+				local y = oplot_fitY(oplot_maxOffset+4)
+				if dvt[i] ~= 1000 then y = oplot_fitY(dvt[i]) end
+				
+				if math.abs(y) > oplot_plotHeight/2 then
+					y = oplot_fitY(oplot_maxOffset+4)
+				end
+				
+				self:SetVertexPosition(vert+0,x-oplot_dotDims/2,y-oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+1,x+oplot_dotDims/2,y-oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+2,x+oplot_dotDims/2,y+oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+3,x-oplot_dotDims/2,y+oplot_dotDims/2,0)
+				
+				for j=0,3 do
+					self:SetVertexColor(vert+j,offsetToJudgeColor(dvt[i]/1000))
+				end
+				
+				vert = vert+4
+				
+			end
+			
+		end"
+		/>
+
+		<!-- Early/late markers -->
+		<Layer Type="BitmapText" File="_misoreg small"
+			OnCommand="xy,-oplot_plotWidth/2,-oplot_plotHeight/2-6-13;zoom,0.45;halign,0;valign,0;queuecommand,DoText"
+			DoTextCommand="%function(self)
+				self:settext('Late (+'..oplot_maxOffset..'ms)')
+			end"
+		/>
+		<Layer Type="BitmapText" File="_misoreg small"
+			OnCommand="xy,-oplot_plotWidth/2,oplot_plotHeight/2-6+13;zoom,0.45;halign,0;valign,1;queuecommand,DoText"
+			DoTextCommand="%function(self)
+				self:settext('Early (-'..oplot_maxOffset..'ms)')
+			end"
+		/>
+
+	</children></Layer>
+	
+	<Layer Type="ActorFrame" OnCommand="xy,SCREEN_WIDTH*0.75-2,SCREEN_HEIGHT*0.65-1;hidden,1"
+	StepP1RightPressMessageCommand="%function(self)
+		local pn = 2
+		if oplot_hidden[pn] == 1 then
+			self:hidden(0)
+		else
+			self:hidden(1)
+		end
+		oplot_hidden[pn] = oplot_hidden[pn]*-1
+	end"
+	><children>
+	
+		<!-- Background -->
+		<Layer Type="Quad" InitCommand="zoomto,305,263;diffuse,0,0,0,1"/>
+
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0;queuecommand,Make"
+		MakeCommand="%function(self)
+			
+			local vert = 0;
+			
+			if not GAMESTATE:IsCourseMode() then
+			
+				local s = GAMESTATE:GetCurrentSong()
+				local sc = s:GetSpellCards()
+				--spellcard table contains:
+					--StartBeat, EndBeat (float)
+					--Name (string)
+					--Color (table of rgba)
+				
+				local lab = s:GetLabels()
+				
+				self:SetNumVertices(table.getn(lab)*4 + table.getn(sc)*4)
+				
+				for i=1, table.getn(sc) do
+					
+					local x1 = oplot_fitX((sc[i].StartBeat))
+					local x2 = oplot_fitX((sc[i].EndBeat))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x1,y1,0)
+					self:SetVertexPosition(vert+1,x2,y1,0)
+					self:SetVertexPosition(vert+2,x2,y2,0)
+					self:SetVertexPosition(vert+3,x1,y2,0)
+					
+					for j=0,3 do
+						self:SetVertexColor(vert+j,sc[i].Color[1],sc[i].Color[2],sc[i].Color[3],sc[i].Color[4]*0.6)
+					end
+					
+					vert = vert+4
+				end
+				
+				for i=1, table.getn(lab) do 
+					
+					local x = oplot_fitX((lab[i].Beat))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x,y1,1)
+					self:SetVertexPosition(vert+1,x+1,y1,1)
+					self:SetVertexPosition(vert+2,x+1,y2,1)
+					self:SetVertexPosition(vert+3,x,y2,1)
+					
+					vert = vert+4
+				end
+				
+			else
+				
+				local lab = oplot_songs
+				
+				self:SetNumVertices(table.getn(lab)*4)
+				
+				for i=1, table.getn(lab) do 
+					
+					local x = oplot_fitXTime(oplot_cumulativeTime(0,i-1))
+					local y1 = oplot_fitY(oplot_maxOffset+4)
+					local y2 = oplot_fitY(-oplot_maxOffset-4)
+					
+					self:SetVertexPosition(vert+0,x,y1,1)
+					self:SetVertexPosition(vert+1,x+1,y1,1)
+					self:SetVertexPosition(vert+2,x+1,y2,1)
+					self:SetVertexPosition(vert+3,x,y2,1)
+					
+					vert = vert+4
+				end
+				
+			end
+			
+		end"
+		/>
+		
+		<!-- Center Bar -->
+		<Layer Type="Quad" OnCommand="zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,offsetToJudgeColor(0)" />
+		
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0;queuecommand,Make"
+		MakeCommand="%function(self)
+			local scale = PREFSMAN:GetPreference('JudgeWindowScale')
+			local fantabars = {
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsMarvelous'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsPerfect'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsGreat'),
+				1000*scale*PREFSMAN:GetPreference('JudgeWindowSecondsGood'),
+			}
+			self:SetNumVertices(table.getn(fantabars)*8)
+			local vert = 0
+			for i=1, table.getn(fantabars) do 
+				--o[#o+1] = Def.Quad{InitCommand=cmd(y, oplot_fitY(tst[judge]*fantabars[i]); zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,byJudgment(bantafars[i]))}
+				--o[#o+1] = Def.Quad{InitCommand=cmd(y, oplot_fitY(-tst[judge]*fantabars[i]); zoomto,oplot_plotWidth+oplot_plotMargin,1;diffuse,byJudgment(bantafars[i]))}
+				
+				self:SetVertexPosition(vert+0,-oplot_plotWidth/2-oplot_plotMargin/2,-oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+1,oplot_plotWidth/2+oplot_plotMargin/2,-oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+2,oplot_plotWidth/2+oplot_plotMargin/2,-oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+3,-oplot_plotWidth/2-oplot_plotMargin/2,-oplot_fitY(fantabars[i])+1,0)
+				
+				self:SetVertexPosition(vert+4,-oplot_plotWidth/2-oplot_plotMargin/2,oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+5,oplot_plotWidth/2+oplot_plotMargin/2,oplot_fitY(fantabars[i])+1,0)
+				self:SetVertexPosition(vert+6,oplot_plotWidth/2+oplot_plotMargin/2,oplot_fitY(fantabars[i]),0)
+				self:SetVertexPosition(vert+7,-oplot_plotWidth/2-oplot_plotMargin/2,oplot_fitY(fantabars[i]),0)
+				
+				for j=0,7 do
+					self:SetVertexColor(vert+j,offsetToJudgeColor((fantabars[i]/1000)+0.002))
+				end
+				
+				vert = vert+8
+			end
+			
+		end"
+		/>
+		
+		<Layer Type="Quad" InitCommand="zoomto,oplot_plotWidth+oplot_plotMargin,oplot_plotHeight+oplot_plotMargin;diffuse,0.1,0.1,0.1,0.8;"/>
+		
+		<!-- Convert noterows to timestamps and plot dots -->
+		<Layer Type="Polygon" DrawMode="Quads" OnCommand="sleep,0.02;queuecommand,Make"
+		MakeCommand="%function(self)
+			local ss = STATSMAN:GetCurStageStats()
+			local pss = ss:GetPlayerStageStats(PLAYER_2)
+			local dvt = pss:GetOffsetVector()
+			local nrt = pss:GetNoteRowVector()
+			local nrs = pss:GetNoteSongVector()
+			
+			self:SetNumVertices(4*table.getn(nrt))
+			
+			local vert = 0;
+			for i=1,table.getn(nrt) do
+			
+				local x = oplot_fitX(nrt[i]/48,nrs[i])
+				local y = oplot_fitY(oplot_maxOffset+4)
+				if dvt[i] ~= 1000 then y = oplot_fitY(dvt[i]) end
+				
+				if math.abs(y) > oplot_plotHeight/2 then
+					y = oplot_fitY(oplot_maxOffset+4)
+				end
+				
+				self:SetVertexPosition(vert+0,x-oplot_dotDims/2,y-oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+1,x+oplot_dotDims/2,y-oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+2,x+oplot_dotDims/2,y+oplot_dotDims/2,0)
+				self:SetVertexPosition(vert+3,x-oplot_dotDims/2,y+oplot_dotDims/2,0)
+				
+				for j=0,3 do
+					self:SetVertexColor(vert+j,offsetToJudgeColor(dvt[i]/1000))
+				end
+				
+				vert = vert+4
+				
+			end
+			
+		end"
+		/>
+
+		<!-- Early/late markers -->
+		<Layer Type="BitmapText" File="_misoreg small"
+			OnCommand="xy,-oplot_plotWidth/2,-oplot_plotHeight/2-6-13;zoom,0.45;halign,0;valign,0;queuecommand,DoText"
+			DoTextCommand="%function(self)
+				self:settext('Late (+'..oplot_maxOffset..'ms)')
+			end"
+		/>
+		<Layer Type="BitmapText" File="_misoreg small"
+			OnCommand="xy,-oplot_plotWidth/2,oplot_plotHeight/2-6+13;zoom,0.45;halign,0;valign,1;queuecommand,DoText"
+			DoTextCommand="%function(self)
+				self:settext('Early (-'..oplot_maxOffset..'ms)')
+			end"
+		/>
+
+	</children></Layer>
+	
+</children></ActorFrame>
