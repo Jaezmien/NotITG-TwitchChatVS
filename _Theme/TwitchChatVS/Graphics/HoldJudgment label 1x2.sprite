@@ -1,3 +1,0 @@
-[Sprite]
-Texture=HoldJudgment 1x2.png
-OnCommand=%function(self) table.insert(holdJudgments,self) end

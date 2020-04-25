@@ -1,3 +1,0 @@
-[Sprite]
-Texture=ScreenOptions1 cursor 3x2.png
-InitCommand=%function(self) self:Load(Path('Graphics','ScreenOptions'..Color()..' cursor 3x2')) end

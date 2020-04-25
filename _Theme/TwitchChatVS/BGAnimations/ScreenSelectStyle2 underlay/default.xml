@@ -1,7 +1,0 @@
-<ActorFrame><children>
-	<Layer
-		Class="AutoActor" 
-		File="../_shared underlay arrows"
-		Command="%function() loadMusic = 1 end"
-	/>
-</children></ActorFrame>

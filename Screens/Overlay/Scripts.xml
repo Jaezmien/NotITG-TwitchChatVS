@@ -1,0 +1,88 @@
+<ActorFrame><children>
+
+    <Layer
+        Type="Quad"
+        Name="Screen Change"
+        Condition="FUCK_EXE"
+        OverlayReadyMessageCommand="queuecommand,First"
+        FirstCommand="%function(self)
+            if CONSTMELODY.Overlay.Last_Seen_Screen ~= '' then return end
+            CONSTMELODY.Overlay.Last_Seen_Screen = 'Initialize' -- overlay is a pain
+            self:luaeffect('Update')
+        end"
+        UpdateCommand="%function(self)
+            if CONSTMELODY.Overlay.Last_Seen_Screen ~= SCREENMAN:GetTopScreen():GetName() then
+                stitch('lua.event').Call('new screen',CONSTMELODY.Overlay.Last_Seen_Screen,SCREENMAN:GetTopScreen():GetName())
+                CONSTMELODY.Overlay.Last_Seen_Screen = SCREENMAN:GetTopScreen():GetName()
+            end
+        end"
+    />
+
+    <Layer
+        Type="Quad"
+        Name="External Handler Timer"
+        Condition="CONSTMELODY.MinimumVersion('V3')"
+        OverlayReadyMessageCommand="queuecommand,First"
+        FirstCommand="%function(self)
+            if not External.initialized then
+                External.timer = self
+                External:initialize()
+                External.initialized = true
+                self:queuecommand('Detect')
+            end
+        end"
+        DetectCommand="%function(self)
+            if GAMESTATE:GetExternal(57) == 1 then
+                self:sleep(1/2)
+                self:queuecommand('Check')
+            end
+            self:sleep(1/60)
+            self:queuecommand('Detect')
+        end"
+        CheckCommand="%function(self)
+            if External:check_write() then
+                Debug('[External Handler] '.. GAMESTATE:GetExternal(59)..' took too long to read, clearing.')
+                External.last_seen_write = nil
+                External:clear_write()
+            end
+
+        end"
+    />
+    <Layer
+        Type="Quad"
+        Name="External Handler Updater"
+        Condition="CONSTMELODY.MinimumVersion('V3')"
+        OverlayReadyMessageCommand="queuecommand,First"
+        FirstCommand="luaeffect,Tick"
+        TickCommand="%function(self)
+            External:tick()
+        end"
+    />
+
+    <!-- -->
+    <Layer
+        Type="Quad"
+        Name="Console Connection Handler"
+        OverlayReadyMessageCommand="queuecommand,Set"
+        SetCommand="%function(self)
+
+            External:add_hook(TwitchChatVS.Flag,'init',function(buffer)
+                if buffer[1] == 0 then
+                    if buffer[2] == 1 then
+                        TwitchChatVS.IsConnected = true
+                        print('Twitch Console Connected!')
+                    elseif buffer[2] == 2 then
+                        TwitchChatVS.IsConnected = false
+                        print('Twitch Console Disconnected!')
+                        if TwitchChatVS.HasStarted then
+                            MESSAGEMAN:Broadcast('TwitchDisconnect')
+                            TwitchChatVS.HasStarted = false
+                        end
+                    end
+                end
+            end)
+
+        end"
+    />
+
+</children></ActorFrame>

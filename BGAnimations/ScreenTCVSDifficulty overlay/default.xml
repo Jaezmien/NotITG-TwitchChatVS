@@ -1,0 +1,85 @@
+<ActorFrame><children>
+    <Aux
+        InitCommand="%function(self)
+
+            tcvs_difficulty_curr = 1
+            InitializeMods();
+            
+        end"
+
+        TwitchDisconnectMessageCommand="%function(self)
+            SCREENMAN:SystemMessage('Console Disconnected')
+
+            SCREENMAN:SetNewScreen('ScreenTitleMenu')
+        end"
+
+        OnCommand="queuecommand,Update"
+        UpdateCommand="%function(self)
+
+            self:cmd('sleep,0.02;queuecommand,Update')
+        end"
+    />
+    <!-- -->
+    <Layer
+        Font="_misoreg"
+        Text="Choose a difficulty!"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.2;shadowlength,2"
+    />
+
+    <Layer
+        Font="_wendy white"
+        Text="pee pee poo poo"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y;zoom,0.5"
+        OnCommand="queuecommand,Set"
+        SetCommand="%function(self)
+            local f = {'Beginner','Easy','Medium','Hard','Challenge'}
+            --
+            local st = f[ tcvs_song_difficulties[tcvs_difficulty_curr]:GetDifficulty() + 1 ]
+            --
+            self:settext(st ..' - '.. tcvs_song_difficulties[tcvs_difficulty_curr]:GetMeter())
+            --
+            GAMESTATE:ApplyGameCommand('Style,Versus')
+            GAMESTATE:ApplyGameCommand('Steps,'..st)
+            GAMESTATE:ApplyGameCommand('PlayMode,Regular')
+            MESSAGEMAN:Broadcast('ShowArrows')
+        end"
+        StepP1LeftPressMessageCommand="%function(self)
+            if tcvs_difficulty_curr-1>0 then
+                tcvs_difficulty_curr=tcvs_difficulty_curr-1
+                --
+                self:queuecommand('Set')
+                MESSAGEMAN:Broadcast('ShowArrows')
+            end
+        end"
+        StepP1RightPressMessageCommand="%function(self)
+            if tcvs_difficulty_curr+1<=table.getn(tcvs_song_difficulties) then
+                tcvs_difficulty_curr=tcvs_difficulty_curr+1
+                --
+                self:queuecommand('Set')
+                MESSAGEMAN:Broadcast('ShowArrows')
+            end
+        end"
+        StepP1UpPressMessageCommand="%function(self) GAMESTATE:ApplyGameCommand('screen,ScreenGameplay'); end"
+    />
+
+    <Layer
+		File="arrow"
+		InitCommand="x,80;y,SCREEN_CENTER_Y"
+		MenuLeftP1MessageCommand="playcommand,Blink"
+		MenuLeftP2MessageCommand="playcommand,Blink"
+		ShowArrowsMessageCommand="%function(self)
+            if table.getn(tcvs_song_difficulties)==1 then self:hidden(1); return end
+            self:hidden( tcvs_difficulty_curr-1>0 and 0 or 1 )
+        end"
+	/>
+	<Layer
+		File="arrow"
+		InitCommand="x,SCREEN_WIDTH-80;y,SCREEN_CENTER_Y;RotationZ,180"
+		MenuRightP1MessageCommand="playcommand,Blink"
+		MenuRightP2MessageCommand="playcommand,Blink"
+		ShowArrowsMessageCommand="%function(self)
+            if table.getn(tcvs_song_difficulties)==1 then self:hidden(1); return end
+            self:hidden( tcvs_difficulty_curr+1<=table.getn(tcvs_song_difficulties) and 0 or 1 )
+        end"
+	/>
+</children></ActorFrame>
