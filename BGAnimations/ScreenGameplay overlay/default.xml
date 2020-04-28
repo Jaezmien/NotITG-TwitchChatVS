@@ -11,7 +11,19 @@
             if tcvs_enable_mod_voting then
                 External:add_buffer( TwitchChatVS.Flag, {2,1} ) -- Screen: Gameplay, Action: Enable Mod Voting
                 External:add_hook( TwitchChatVS.Flag, 'mod voting', function(buffer)
-                    -- Something something
+                    if buffer[1] ~= 2 then return end -- Screen: Gameplay
+                    if buffer[2] ~= 1 then return end -- Action: Add mod
+
+                    local mod_string = ''
+                    local mod_percent = 0
+
+                    mod_percent = buffer[3] * (buffer[4] == 1 and -1 or 1)
+                    local mod_string_buffer = {}
+                    for i=5,table.getn(buffer) do
+                        table.insert(mod_string_buffer, buffer[i]+1)
+                    end
+                    mod_string = External.decode( mod_string_buffer )
+                    table.insert( tcvs_game_queue, { GAMESTATE:GetSongTime(), mod_percent, mod_string } )
                 end )
             end
 
@@ -154,17 +166,13 @@
                 local b = GAMESTATE:GetSongTime()
 
                 -- Adding mods from queue if there is a space
-                if table.getn(tcvs_game_activatedMods) < 6 then
+                if table.getn(tcvs_game_activatedMods) < stitch('config').TCVS_ModQueueLimit then
 
                     local r = 0
                     for i,v in pairs(tcvs_game_queue) do
                         table.insert(tcvs_game_activatedMods,v)
                         --
-                        if v[1]==1 then
-                            SCREENMAN:SystemMessage('Activated '.. v[4] ..'% '.. v[3] ..'!')
-                        else
-                            SCREENMAN:SystemMessage('Activated Switcheroo!')
-                        end
+                        SCREENMAN:SystemMessage('Activated '.. v[2] ..'% '.. v[3] ..'!')
                         --
                         r=r+1
                         if table.getn(tcvs_game_activatedMods) > 4 then
@@ -177,20 +185,17 @@
                 end
 
                 -- Enabling mods
+                GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype')
+                GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x')
+
                 local t = {}
                 for i,v in pairs(tcvs_game_activatedMods) do
+                    -- {time_start, percent, mod}
+                    if b>=v[1] then
 
-                    if b>=v[2] then
+                        if b<=v[1]+16 then
 
-                        if b<=v[2]+16 then
-
-                            if v[1]==1 then
-                                GAMESTATE:ApplyModifiers('*1 '.. v[4] ..' '.. v[3])
-                                active = active..'\n '.. v[4] ..' '.. v[3]
-                            else
-                                GAMESTATE:ApplyModifiers('*1 '.. v[3] ..' flip, *1 '.. v[4] ..' invert')
-                                active = active..'\n '.. v[3] ..' flip, *1 '.. v[4] ..' invert'
-                            end
+                            GAMESTATE:ApplyModifiers('*1 '.. v[2] ..' '.. v[3])
                             table.insert(t,v)
 
                         end
@@ -201,9 +206,6 @@
 
                 end
                 tcvs_game_activatedMods = t
-
-                GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype')
-                GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x')
 
             end
 

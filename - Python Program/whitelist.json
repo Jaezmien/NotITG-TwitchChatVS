@@ -1,0 +1,89 @@
+{
+    "boost": {
+        "range": [-100, 100]
+    },
+    "brake": {
+        "range": [-100, 100]
+    },
+    "wave": {
+        "range": [-100, 100]
+    },
+    "expand": {
+        "range": [-100, 100]
+    },
+    "boomerang": {
+        "range": [-100, 100]
+    },
+    "drunk": {
+        "range": [-100, 100]
+    },
+    "dizzy": {
+        "range": [-100, 100]
+    },
+    "twirl": {
+        "range": [-100, 100]
+    },
+    "roll": {
+        "range": [-100, 100]
+    },
+    "mini": {
+        "range": [-100, 100]
+    },
+    "flip": {
+        "range": [-100, 100]
+    },
+    "invert": {
+        "range": [-100, 100]
+    },
+    "tornado": {
+        "range": [-100, 100]
+    },
+    "tipsy": {
+        "range": [-100, 100]
+    },
+    "bumpy": {
+        "range": [-100, 100]
+    },
+    "beat": {
+        "range": [-100, 100]
+    },
+    "hidden": {
+        "range": [0, 50]
+    },
+    "hiddenoffset": {
+        "range": [-100, 100]
+    },
+    "sudden": {
+        "range": [0, 50]
+    },
+    "suddenoffset": {
+        "range": [-100, 100]
+    },
+    "stealth": {
+        "range": [-50, 50]
+    },
+    "blink": {
+        "range": [-100, 100]
+    },
+    "randomvanish": {
+        "range": [-100, 100]
+    },
+    "reverse": {
+        "range": [-100, 100]
+    },
+    "split": {
+        "range": [-100, 100]
+    },
+    "alternate": {
+        "range": [-100, 100]
+    },
+    "cross": {
+        "range": [-100, 100]
+    },
+    "centered": {
+        "range": [-100, 100]
+    },
+    "dark": {
+        "range": [-100, 100]
+    }
+}

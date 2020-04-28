@@ -1,0 +1,5 @@
+apscheduler
+psutil
+pypresence
+twitch-python
+python-dotenv

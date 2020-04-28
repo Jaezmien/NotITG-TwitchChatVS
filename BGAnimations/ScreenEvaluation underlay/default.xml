@@ -61,6 +61,7 @@
 	<Aux
 		InitCommand="%function(self)
 			External:remove_hook( TwitchChatVS.Flag, 'mod voting' )
+			External:add_hook( TwitchChatVS.Flag, {3,1}  ) -- Screen: Evaluation, Action: Finished Song
 		end"
 	/>
 </children></ActorFrame>

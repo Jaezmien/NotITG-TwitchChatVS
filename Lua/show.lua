@@ -135,4 +135,6 @@ function show:__call( ... )
     return print(unpack(arg))
 end
 
+_G.show = show
+
 return setmetatable(show, show)

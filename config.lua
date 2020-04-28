@@ -24,6 +24,7 @@ FailOverlay = 2
 EditorShowSongTitle=true
 
 TCVS_VotingTime = 30
+TCVS_ModQueueLimit = 6
 
 -- Debug: Lua heap viewer
 ViewGC = false

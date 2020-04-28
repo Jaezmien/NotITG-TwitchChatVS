@@ -1,8 +1,15 @@
+TOKEN_LIMIT=6
+
 # Load sensitive data
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
+
+# Load whitelist
+import json
+with open('whitelist.json','r') as json_file:
+    data = json.load( json_file )
 
 ##############################
 # Do Twitch connection
@@ -24,18 +31,43 @@ def handle_message(message: twitch.chat.Message):
     global start_voting
     global has_voted
     global vote_status
-    if message.text == "!ping":
-        #message.chat.send('Pong!')
-        pass
-    else:
-        if start_voting and message.text.startswith("!vote "):
-            if not (message.sender in has_voted):
-                vote_num = int( message.text[ len("!vote "): ] )
-                if not math.isnan( vote_num ) and (vote_num >= 1 and vote_num <= 5):
-                    #print( f"{ message.sender } voted { vote_num } ")
-                    has_voted.append( message.sender )
-                    vote_status[ vote_num-1 ] += 1
-                    WriteNotITG( [1, 1, vote_num, vote_status[vote_num-1]] )
+
+    try:
+
+        if message.text == "!ping":
+            #message.chat.send('Pong!')
+            pass
+        elif message.text == "!docs":
+            live_chat.send("Here's the link to the mods list - https://kutt.it/TCVSBMod")
+        else:
+            if start_voting and message.text.startswith("!vote "):
+                if not (message.sender in has_voted):
+                    vote_num = int( message.text[ len("!vote "): ] )
+                    if not math.isnan( vote_num ) and (vote_num >= 1 and vote_num <= 5):
+                        #print( f"{ message.sender } voted { vote_num } ")
+                        has_voted.append( message.sender )
+                        vote_status[ vote_num-1 ] += 1
+                        WriteNotITG( [1, 1, vote_num, vote_status[vote_num-1]] )
+            elif start_mod_voting and message.text.startswith("!mod ") and len(message.text[ len("!mod "): ].split(' ')) == 2:
+                vote_str = message.text[ len("!mod "): ].split(' ')
+                if not vote_str[0].isdigit():
+                    return
+                mod_string = vote_str[1].lower()
+                mod_percent = int( vote_str[0] )
+                if not math.isnan( mod_percent ) and mod_string in data:
+                    mod_range = data[ mod_string ]['range']
+                    if mod_range[0] <= mod_percent and mod_percent <= mod_range[1]:
+                        mod_string_buffer = encode_string(mod_string)
+                        mod_isNegative = 1 if mod_percent < 0 else 0
+
+                        send_buffer = [2, 1, abs(mod_percent), mod_isNegative] + mod_string_buffer
+                        WriteNotITG( send_buffer )
+
+    except Exception as e:
+
+        print('Something has gone horribly wrong somewhere in that pile of mess :) Please yell at Jaezmien')
+        print( e )
+
 def voting_clean(msg = ""):
     global live_chat
     global has_voted
@@ -50,7 +82,7 @@ def voting_clean(msg = ""):
     start_mod_voting = False
 
 live_chat = twitch.Chat(
-    channel="#jaezmien",
+    channel=os.getenv("STREAMNAME"),
     nickname="SweetieBot",
     oauth=os.getenv("OAUTH"),
     helix=helix
@@ -108,6 +140,7 @@ def decode_buffer(buff):
 rpc_screen = None
 def notitg_onRead(buffer):
     global start_voting
+    global start_mod_voting
     global vote_status
     global voting_clean
     global has_voted
@@ -118,6 +151,7 @@ def notitg_onRead(buffer):
         if buffer[1] == 1: # Enable Voting
             live_chat.send("Voting has started! Send [!vote #] to vote. (Only once per user)");
             start_voting = True
+            start_mod_voting = False
         elif buffer[1] == 2: # Finish Voting
             live_chat.send("Voting has ended!");
             start_voting = False
@@ -156,8 +190,12 @@ def notitg_onRead(buffer):
             vote_status[ buffer[2]-1 ] = 99
     elif buffer[0] == 2: # Gameplay
         if buffer[1] == 1: # Enable mod voting
-            print("Mod casting has been enabled! Syntax: [!mod (percent) (name)] / [!mod switcheroo_(ldur combination)]")
-            pass # TODO: Easy way of whitelisting/blacklisting mods
+            start_mod_voting = True
+            live_chat.send("Mod casting has been enabled! Syntax: [!mod (percent) (name)]")
+    elif buffer[0] == 3: # Eval
+        if buffer[1] == 1: # Finished Song
+            start_mod_voting = False
+            live_chat.send("Song has finished!")
 
 ## NOTITG HANDLER
 import time
@@ -228,7 +266,6 @@ def TickNotITG():
 def HeartbeatNotITG():
     global has_notitg
     global nitg
-    global rpc_nitg_version
     if has_notitg:
         if NITGEXT.Heartbeat(nitg):
             if show_heartbeat_message: print('💓  Successfully heartbeated NotITG!')
