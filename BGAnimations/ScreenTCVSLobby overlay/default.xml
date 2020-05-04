@@ -62,7 +62,7 @@
                 --
                 tcvs_song_difficulties = {}
                 for i,v in pairs(tcvs_song:GetAllSteps()) do
-                    if v:GetDifficulty()~=5 and v:GetStepsType()==0 then
+                    if v:GetDifficulty() ~= 5 and v:GetStepsType() == 0 then
                         table.insert(tcvs_song_difficulties,v)
                     end
                 end
@@ -87,22 +87,11 @@
         end"
     />
 
-    <!-- water merk -->
-    <Layer
-        File="cow.png"
-        InitCommand="xy,SCREEN_WIDTH,SCREEN_HEIGHT+10;horizalign,right;vertalign,bottom"
-    />
-    <Layer
-        Font="_misoreg"
-        Text="chegg told me to put myself here.::so hai there, am jasmine::i did most of the code here"
-        InitCommand="xy,SCREEN_WIDTH-100,SCREEN_CENTER_Y*1.18;rotationz,-5;shadowlength,1;zoom,0.4;wag;effectmagnitude,0,0,4"
-    />
-
     <!-- peepee -->
     <Layer
         Font="_misobold white"
         Text="Voting has started!"
-        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.25;shadowlength,1"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.25+20;shadowlength,1;vertalign,bottom"
         OnCommand="%function(self)
             tcvs_lobby_spinTimer=0
             tcvs_lobby_endCurr = 2
@@ -117,9 +106,9 @@
 
     <!-- timer -->
     <Layer
-        Font="_misobold white"
+        Font="_eurostile outline"
         Text="69"
-        InitCommand="xy,10,0;horizalign,left;vertalign,top;zoom,2"
+        InitCommand="xy,10,10;horizalign,left;vertalign,top;zoom,2"
         OnCommand="queuecommand,Set" SetCommand="%function(self)
             tcvs_lobby_timer= stitch('config').TCVS_VotingTime
 
@@ -198,10 +187,29 @@
         OnCommand="queuecommand,Set"
         SetCommand="%function(self)
             local s = SONGMAN:GetAllSongs()
+            -- Filter to only grab Dance Single songs
+            local ns = {}
+            for i,v in pairs(s) do
+                local has_dance_single = false
+                local has_non_edit_difficulty = false
+                for i,step in pairs( v:GetAllSteps() ) do    
+                    if step:GetStepsType()==0 then
+                        has_dance_single = true
+                        if step:GetDifficulty()~=5 then
+                            has_non_edit_difficulty = true
+                        end
+                    end
+                end
+                if has_dance_single and has_non_edit_difficulty then
+                    table.insert(ns, v)
+                end
+            end
+            s = ns
             --
             if table.getn(s)<8 then
-                SCREENMAN:SystemMessage('Not enough songs! At least 9 songs are needed')
+                SCREENMAN:SystemMessage('Not enough songs! At least 9 singles songs are needed')
                 SCREENMAN:SetNewScreen('ScreenLove')
+                return
             end
             --
             local function r(t)
@@ -219,7 +227,6 @@
             for i=1,5 do
                 local files = { GAMESTATE:GetFileStructure( tcvs_lobby_songs[i]:GetSongDir() ) }
                 for k,v in pairs(files) do
-                    print(i, v)
                     if table.getn(CONSTMELODY.Split( v, '.' ))==1 then
                         tcvs_is_modded[i] = true
                         break
@@ -229,6 +236,10 @@
                 _G['tcvs_lobby_song'..i]:settext(i..' - [' .. tcvs_lobby_songs[i]:GetDisplayMainTitle() .. '] (0) '.. (tcvs_is_modded[i] and '[MODS]' or ''))
             end
         end"
+    />
+    <Layer
+        Type="Quad"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y+35;zoomto,SCREEN_WIDTH,300;diffuse,0,0,0,0.2"
     />
     <Layer
         Font="_misoreg"
@@ -274,6 +285,17 @@
             tcvs_lobby_speedmod=tcvs_lobby_speedmod+0.1
             self:settext('SpeedMod\n'..tcvs_lobby_speedmod..'x')
         end"
+    />
+
+    <!-- water merk -->
+    <Layer
+        File="cow.png"
+        InitCommand="xy,SCREEN_WIDTH,SCREEN_HEIGHT+15;horizalign,right;vertalign,bottom;addy,5;bounce;effectperiod,0.5;effectmagnitude,0,-5,0"
+    />
+    <Layer
+        Font="_misoreg"
+        Text="chegg told me to put myself here.::so hai there, am jasmine::i did most of the code here"
+        InitCommand="xy,SCREEN_WIDTH-100+5,SCREEN_CENTER_Y*1.18-5;rotationz,5;shadowlength,1;zoom,0.5;wag;effectmagnitude,0,0,4"
     />
 
     <!-- fade -->

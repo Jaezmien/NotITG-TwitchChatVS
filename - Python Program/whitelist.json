@@ -1,89 +1,178 @@
 {
     "boost": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "brake": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "wave": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "expand": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "boomerang": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "drunk": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "dizzy": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "twirl": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "roll": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "mini": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "flip": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "invert": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "tornado": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "tipsy": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "bumpy": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "beat": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "hidden": {
-        "range": [0, 50]
+        "range": [0, 50],
+        "defaultPercentage": 50
     },
     "hiddenoffset": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "sudden": {
-        "range": [0, 50]
+        "range": [0, 50],
+        "defaultPercentage": 50
     },
     "suddenoffset": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "stealth": {
         "range": [-50, 50]
     },
     "blink": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "randomvanish": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "reverse": {
-        "range": [-100, 100]
+        "range": [-100, 100],
+        "disableRange": [48,52],
+        "enableColumnSpecific": true
     },
     "split": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "alternate": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "cross": {
-        "range": [-100, 100]
+        "range": [-200, 200]
     },
     "centered": {
-        "range": [-100, 100]
+        "range": [0, 50],
+        "defaultPercentage": 50
     },
     "dark": {
-        "range": [-100, 100]
+        "range": [0, 100]
+    },
+    "rotationx": {
+        "range": [-45, 45],
+        "defaultPercentage": 45
+    },
+    "rotationy": {
+        "range": [-45, 45],
+        "defaultPercentage": 45
+    },
+    "rotationz": {
+        "range": [-45, 45],
+        "defaultPercentage": 45
+    },
+    "orient": {
+        "range": [0, 100]
+    },
+    "noteskew": {
+        "range": [-100,100]
+    },
+    "arrowpath": {
+        "range": [0, 100]
+    },
+    "tinyx": {
+        "range": [0, 200]
+    },
+    "tinyy": {
+        "range": [0, 200]
+    },
+    "tandrunk": {
+        "range": [-200, 200]
+    },
+    "drunky": {
+        "range": [-200, 200]
+    },
+    "drunkz": {
+        "range": [-200, 200]
+    },
+    "zigzag": {
+        "range": [-200, 200]
+    },
+    "sawtooth": {
+        "range": [-200, 200]
+    },
+    "bounce": {
+        "range": [-200, 200]
+    },
+    "bouncez": {
+        "range": [-200, 200]
+    },
+    "digital": {
+        "range": [-200, 200]
+    },
+    "tandigital": {
+        "range": [-200, 200]
+    },
+    "tandigitalz": {
+        "range": [-200, 200]
+    },
+    "pulse": {
+        "range": [-200, 200]
+    },
+    "tantipsy": {
+        "range": [-200, 200]
+    },
+    "tanbumpy": {
+        "range": [-200, 200]
+    },
+    "tanbumpyx": {
+        "range": [-200, 200]
+    },
+    "beaty": {
+        "range": [-200, 200]
+    },
+    "beatz": {
+        "range": [-200, 200]
+    },
+    "parabolax": {
+        "range": [-200, 200]
+    },
+    "parabolay": {
+        "range": [-200, 200]
+    },
+    "parabolaz": {
+        "range": [-200, 200]
     }
 }

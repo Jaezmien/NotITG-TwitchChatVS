@@ -185,7 +185,7 @@
                 end
 
                 -- Enabling mods
-                GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype')
+                GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype, *-1 zbuffer, *-1 spiralholds')
                 GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x')
 
                 local t = {}

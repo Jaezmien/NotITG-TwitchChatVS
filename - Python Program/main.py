@@ -1,4 +1,5 @@
-TOKEN_LIMIT=6
+TOKEN_LIMIT=6 # Set to 0 to disable the limit
+COMMAND_PREFIXES = ['!','.','$','+','-','~']
 
 # Load sensitive data
 from dotenv import load_dotenv
@@ -15,6 +16,7 @@ with open('whitelist.json','r') as json_file:
 # Do Twitch connection
 import twitch
 import math
+import re
 from datetime import timedelta
 helix = twitch.Helix(
     os.getenv("CLIENTID"),
@@ -26,57 +28,95 @@ print("Logged in to Twitch!")
 start_voting = False
 start_mod_voting = False
 has_voted = []
+has_mod_voted = {}
 vote_status = [0,0,0,0,0]
+
+def parse_mod(mod_percent: int, mod_string: str):
+    global data
+
+    mod_actual_string = mod_string
+    if re.search(r'\d$', mod_string):
+        # Check if its still a valid mod
+        if not re.sub(r'\d$','',mod_string) in data:
+            return
+        mod_string = re.sub(r'\d$','',mod_string)
+
+    if not math.isnan( mod_percent ) and mod_string in data:
+        mod_range = data[ mod_string ]['range']
+        mod_percent = max( min(mod_range[1], mod_percent) , mod_range[0] )
+        if "disableRange" in data[ mod_string ]:
+            disabled_percentage = data[ mod_string ]['disableRange']
+            if mod_percent >= disabled_percentage[0] and mod_percent <= disabled_percentage[1]:
+                #if "defaultPercentage" in data[ mod_string ]:
+                #    mod_percent = data[ mod_string ]['defaultPercentage']
+                #else:
+                #    mod_percent = 100
+                return
+        mod_string_buffer = encode_string(mod_actual_string)
+        mod_isNegative = 1 if mod_percent < 0 else 0
+        send_buffer = [2, 1, abs(mod_percent), mod_isNegative] + mod_string_buffer
+        WriteNotITG( send_buffer )
+
 def handle_message(message: twitch.chat.Message):
     global start_voting
     global has_voted
+    global has_mod_voted
     global vote_status
 
-    try:
-
-        if message.text == "!ping":
+    if message.text[0] in COMMAND_PREFIXES:
+        cmd = message.text[1:]
+        if cmd == "ping":
             #message.chat.send('Pong!')
             pass
-        elif message.text == "!docs":
+        elif cmd in ['docs','modlist','help','cmds','commands']:
             live_chat.send("Here's the link to the mods list - https://kutt.it/TCVSBMod")
         else:
-            if start_voting and message.text.startswith("!vote "):
+            if start_voting and cmd.startswith("vote "):
                 if not (message.sender in has_voted):
-                    vote_num = int( message.text[ len("!vote "): ] )
+                    try:
+                        vote_num = int( cmd[ len("vote "): ] )
+                    except:
+                        return # why
                     if not math.isnan( vote_num ) and (vote_num >= 1 and vote_num <= 5):
                         #print( f"{ message.sender } voted { vote_num } ")
                         has_voted.append( message.sender )
                         vote_status[ vote_num-1 ] += 1
                         WriteNotITG( [1, 1, vote_num, vote_status[vote_num-1]] )
-            elif start_mod_voting and message.text.startswith("!mod ") and len(message.text[ len("!mod "): ].split(' ')) == 2:
-                vote_str = message.text[ len("!mod "): ].split(' ')
-                if not vote_str[0].isdigit():
-                    return
-                mod_string = vote_str[1].lower()
-                mod_percent = int( vote_str[0] )
-                if not math.isnan( mod_percent ) and mod_string in data:
-                    mod_range = data[ mod_string ]['range']
-                    if mod_range[0] <= mod_percent and mod_percent <= mod_range[1]:
-                        mod_string_buffer = encode_string(mod_string)
-                        mod_isNegative = 1 if mod_percent < 0 else 0
+            elif start_mod_voting and cmd.startswith("mod "): # ( !mod [percent] [mod] )
 
-                        send_buffer = [2, 1, abs(mod_percent), mod_isNegative] + mod_string_buffer
-                        WriteNotITG( send_buffer )
+                if TOKEN_LIMIT != 0:
+                    if not (message.sender in has_mod_voted):
+                        has_mod_voted[message.sender] = 0
 
-    except Exception as e:
+                    if has_mod_voted[message.sender] > TOKEN_LIMIT:
+                        return
+                    has_mod_voted[message.sender] += 1
 
-        print('Something has gone horribly wrong somewhere in that pile of mess :) Please yell at Jaezmien')
-        print( e )
+                vote_str = cmd[ len("mod "): ].split(' ')
+                if len(cmd[ len("mod "): ].split(' ')) == 2:
+                    try:
+                        mod_percent = int( vote_str[0].replace('%','') )
+                    except:
+                        return # You fucked up your mod string my boyo.
+                    mod_string = vote_str[1].lower()
+                    parse_mod( mod_percent, mod_string )
+                            
+                elif len(cmd[ len("!mod "): ].split(' ')) == 1: # why would you do this( !mod [mod] )
+                    mod_string = vote_str[0].lower()
+                    mod_percent = 100 # eh
+                    parse_mod( mod_percent, mod_string )
 
 def voting_clean(msg = ""):
     global live_chat
     global has_voted
+    global has_mod_voted
     global vote_status
     global start_voting
     global start_mod_voting
 
     live_chat.send(msg)
     has_voted = []
+    has_mod_voted = {}
     vote_status = [0,0,0,0,0]
     start_voting = False
     start_mod_voting = False
@@ -168,7 +208,10 @@ def notitg_onRead(buffer):
                         index = i
                         break
                 WriteNotITG( [1,2, index+1] )
-            # Case 2: Tie
+            # Case 2: No one voted
+            elif ( vote_status[0] + vote_status[1] + vote_status[2] + vote_status[3] + vote_status[4] ) == 0:
+                WriteNotITG( [1,2, random.randint(1,5)] )
+            # Case 3: Tie
             elif tie_check[0] == tie_check[1]:
                 # Get index of highest votes
                 indexes = []
@@ -178,10 +221,8 @@ def notitg_onRead(buffer):
                         break
                 choice = random.choice(indexes)
                 WriteNotITG( [1,2, choice] ) # Grab random
-            # Case 3: No one voted
-            elif ( vote_status[0] + vote_status[1] + vote_status[2] + vote_status[3] + vote_status[4] ) == 0:
-                WriteNotITG( [1,2, random.randint(1,5)] )
             else:
+                print('Something went wrong in the case handler!')
                 WriteNotITG( [1,2, random.randint(1,5)] )
 
             has_voted = []
