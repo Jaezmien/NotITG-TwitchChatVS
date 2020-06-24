@@ -2,11 +2,14 @@ TOKEN_LIMIT=6 # Set to 0 to disable the limit
 COMMAND_PREFIXES = ['!','.','$','+','-','~']
 
 # Load sensitive data
+import os.path
+import sys
+if not os.path.isfile(".env"):
+    sys.exit("DotEnv (.env) file not found.")
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
 # Load whitelist
 import json
 with open('whitelist.json','r') as json_file:

@@ -1,0 +1,5 @@
+CLIENTID=rte3l2nvx2p4r6iso3284xutbgsg83
+# Use [https://twitchapps.com/tmi/] to get your chat OAuth
+OAUTH=oauth:blahblahblah
+# Hashtag + Your twitch name
+STREAMNAME=#jaezmien
