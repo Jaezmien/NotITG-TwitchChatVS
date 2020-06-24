@@ -2,12 +2,9 @@ TOKEN_LIMIT=6 # Set to 0 to disable the limit
 COMMAND_PREFIXES = ['!','.','$','+','-','~']
 
 # Load sensitive data
-import os.path
-import sys
-if not os.path.isfile(".env"):
-    sys.exit("DotEnv (.env) file not found.")
-from dotenv import load_dotenv
-load_dotenv()
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 import os
 # Load whitelist
@@ -22,7 +19,7 @@ import math
 import re
 from datetime import timedelta
 helix = twitch.Helix(
-    os.getenv("CLIENTID"),
+    "rte3l2nvx2p4r6iso3284xutbgsg83",
     use_cache=True,
     cache_duration=timedelta(minutes=10)
 )
@@ -125,9 +122,9 @@ def voting_clean(msg = ""):
     start_mod_voting = False
 
 live_chat = twitch.Chat(
-    channel=os.getenv("STREAMNAME"),
+    channel=f"#{config['Config']['StreamName']}",
     nickname="SweetieBot",
-    oauth=os.getenv("OAUTH"),
+    oauth=config['Config']['OAuth'],
     helix=helix
 )
 live_chat.subscribe( handle_message )
