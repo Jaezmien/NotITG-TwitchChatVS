@@ -7,6 +7,15 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 import os
+import sys
+if not os.path.exists('config.ini'):
+    config['Config'] = {
+        'OAuth':'<Use [https://twitchapps.com/tmi/] to get your chat OAuth>',
+        'StreamName': '<Your twitch name, lowercased>'
+    }
+    config.write( open('config.ini', 'w') )
+    sys.exit("Config.init file not found, exiting program and creating ini file.")
+
 # Load whitelist
 import json
 with open('whitelist.json','r') as json_file:
@@ -122,7 +131,7 @@ def voting_clean(msg = ""):
     start_mod_voting = False
 
 live_chat = twitch.Chat(
-    channel=f"#{config['Config']['StreamName']}",
+    channel=f"#{ (config['Config']['StreamName'].lower()) }",
     nickname="SweetieBot",
     oauth=config['Config']['OAuth'],
     helix=helix

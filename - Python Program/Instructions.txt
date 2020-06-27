@@ -1,0 +1,6 @@
+0.) download python 3
+1.) follow the instructions on config.ini
+2.) open the folder in cmd and type [pip install -r requirements.txt]
+3.) run the program using [python main.py]
+4.) ???
+5.) profit
