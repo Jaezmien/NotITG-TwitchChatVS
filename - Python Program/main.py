@@ -27,12 +27,6 @@ import twitch
 import math
 import re
 from datetime import timedelta
-helix = twitch.Helix(
-    "rte3l2nvx2p4r6iso3284xutbgsg83",
-    use_cache=True,
-    cache_duration=timedelta(minutes=10)
-)
-print("Logged in to Twitch!")
 
 start_voting = False
 start_mod_voting = False
@@ -133,10 +127,10 @@ def voting_clean(msg = ""):
 live_chat = twitch.Chat(
     channel=f"#{ (config['Config']['StreamName'].lower()) }",
     nickname="SweetieBot",
-    oauth=config['Config']['OAuth'],
-    helix=helix
+    oauth=config['Config']['OAuth']
 )
 live_chat.subscribe( handle_message )
+
 print("Connected to Twitch chat!")
 
 ##############################
@@ -156,7 +150,6 @@ def final_exit():
     global helix
     if sched.running:
         sched.shutdown(wait=False)
-    del helix
     print('Exited!')
     os._exit(0)
 def handler(signum, frame): 
