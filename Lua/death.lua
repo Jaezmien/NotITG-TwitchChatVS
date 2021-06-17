@@ -48,7 +48,7 @@ function death:Ready()
         end)
     end
 
-    self:addcommand("StepP1Action5PressMessage", death.Next)
+    self:addcommand("StepP1Action9PressMessage", death.Next)
 end
 
 function death.Start()

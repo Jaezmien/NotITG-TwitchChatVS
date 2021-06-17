@@ -1,0 +1,4 @@
+<ActorFrame><children>
+	<Layer Type="Quad" Command="stretchto,SCREEN_LEFT,SCREEN_TOP,SCREEN_RIGHT,SCREEN_BOTTOM;diffuse,0,0,0,1;linear,.5;diffusealpha,0" />
+	<Layer File="_moveon" Command="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y;diffusealpha,1;linear,0.1;diffusealpha,0" />
+</children></ActorFrame>

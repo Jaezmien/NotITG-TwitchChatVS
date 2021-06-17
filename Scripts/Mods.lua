@@ -1326,13 +1326,17 @@ function SetOptionRow(row,c) -- If c is true this will not adjust cursor size. U
 		u[2]:x(-(z + u[1]:GetWidth())/2)
 		u[3]:x((z + u[1]:GetWidth())/2)
 	end
-
 	local display = SliderDisplayFunction[name]
 
 	for pn=1,2 do if Player(pn) then local p = PlayerIndex(pn) -- Must always check all players. When an option changes the entire row has its text set, not just the changing player.
 		if not optionRowText[r][p+1] then optionRowText[r][p+1] = optionRowText[r][p] end -- false when "One Choice for all players"
 		display( optionRowText[r][p+1] , pn )
-		if not c and optionCursor[p]:GetY() > (optionRow[r-1]:GetY() or 0) and optionCursor[p]:GetY() < (optionRow[r+1]:GetY() or 0) then Size(optionCursorSprite[p],optionRowText[r][p+1]) end
+		local cursor = optionCursor[p]:GetY()
+		local rowBelow = optionRow[r-1] and optionRow[r-1]:GetY() or 0
+		local rowAbove = optionRow[r+1] and optionRow[r+1]:GetY() or 0
+		if not c and ( cursor > rowBelow and cursor < rowAbove ) then
+			Size(optionCursorSprite[p],optionRowText[r][p+1])
+		end
 		for i,u in ipairs(optionUnderlineSprite) do if u.Row == r then Size(optionUnderlineSprite[i-1+p],optionRowText[r][p+1]) break end end
 	end end
 end

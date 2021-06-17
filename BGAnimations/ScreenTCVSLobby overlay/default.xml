@@ -2,16 +2,9 @@
     <Aux
         InitCommand="%function(self)
 
-            tcvs_lobby_speedmod = 2.5
-            tcvs_lobby_set = false
-            tcvs_song = nil
-            tcvs_is_modded = {false,false,false,false,false}
-            tcvs_enable_mod_voting = false
-            
-            --GAMESTATE:SetExternal(1,1)
-            --GAMESTATE:SetExternal(2,1) -- screen: lobby
-            --GAMESTATE:SetExternal(3,1) -- start voting
-            --GAMESTATE:SetExternal(0,TwitchChatVS.flag)
+            TwitchChatVS.SelectedSong = nil
+            TwitchChatVS.IsModded = {false,false,false,false,false}
+            TwitchChatVS.EnableModVoting = false
 
             External:add_buffer( TwitchChatVS.Flag, {1,1} ) -- Screen: Lobby, Action: Start Voting
             
@@ -23,7 +16,7 @@
             External:remove_hook( TwitchChatVS.Flag, 'lobby vote' )
             External:remove_hook( TwitchChatVS.Flag, 'lobby timer finished' )
 
-            SCREENMAN:SetNewScreen('ScreenTitleMenu')
+            GAMESTATE:ApplyGameCommand('screen,ScreenTitleMenu')
         end"
         UpdateCommand="%function(self)
 
@@ -34,7 +27,8 @@
                 local n = buffer[3] -- Vote #
                 local a = buffer[4] -- New Number of Votes
                 
-                _G['tcvs_lobby_song'..n]:settext(n..' - [' .. tcvs_lobby_songs[n]:GetDisplayMainTitle() .. '] ('..a..') '.. (tcvs_is_modded[n] and '[MODS]' or ''))
+                TwitchChatVS.LobbyActors[ n ]:settext(n..' - [' .. TwitchChatVS.LobbySongs[ n ]:GetDisplayMainTitle() .. '] ('..a..') '.. (TwitchChatVS.IsModded[ n ] and '[MODS]' or ''))
+				TwitchChatVS.LobbyActors[ n ]:cmd('finishtweening;diffuse,1,1,0.6,1;addx,20;decelerate,1;addx,-20;diffuse,1,1,1,1')
             end)
             External:add_hook( TwitchChatVS.Flag, 'lobby timer finished', function(buffer)
                 if buffer[1] ~= 1 then return end -- Screen: Lobby
@@ -42,48 +36,43 @@
                 
                 local v = buffer[3] -- Vote #
 
+				SOUND:PlayOnce( THEME:GetPath(4, 'MusicWheel', 'Sort') )
+
                 for i=1,5 do
+					local actor = TwitchChatVS.LobbyActors[ i ]
                     if i~=v then
-                        local s = _G['tcvs_lobby_song'..i]
-                        s:decelerate(1)
-                        s:addx(-SCREEN_WIDTH)
+                        actor:decelerate(1)
+                        actor:addx(-SCREEN_WIDTH)
                     else
-                        _G['tcvs_lobby_song'..i]:rainbow()
+                        actor:rainbow()
                     end
                 end
 
-                if not tcvs_is_modded[v] then tcvs_enable_mod_voting=true end
+                if not TwitchChatVS.IsModded[v] then TwitchChatVS.EnableModVoting=true end
 
                 --
                 GAMESTATE:JoinPlayer(0)
                 GAMESTATE:JoinPlayer(1)
-                --print( v, tcvs_lobby_songs[v] )
-                tcvs_song = tcvs_lobby_songs[v]
+				TwitchChatVS.SelectedSong = TwitchChatVS.LobbySongs[ v ]
                 --
-                tcvs_song_difficulties = {}
-                for i,v in pairs(tcvs_song:GetAllSteps()) do
+                TwitchChatVS.SongDifficulties = {}
+                for i,v in pairs( TwitchChatVS.SelectedSong:GetAllSteps() ) do
                     if v:GetDifficulty() ~= 5 and v:GetStepsType() == 0 then
-                        table.insert(tcvs_song_difficulties,v)
+                        table.insert(TwitchChatVS.SongDifficulties,v)
                     end
                 end
                 --
-                table.sort(tcvs_song_difficulties, function(a,b) return a:GetDifficulty() < b:GetDifficulty(); end)
-                --
+                table.sort(TwitchChatVS.SongDifficulties, function(a,b) return a:GetDifficulty() < b:GetDifficulty(); end)
                 GAMESTATE:ApplyGameCommand('mod,scalable')
                 GAMESTATE:ApplyGameCommand('playmode,regular')
 
-                local song_dir_split = CONSTMELODY.Split( tcvs_lobby_songs[v]:GetSongDir(), '/' )
+                local song_dir_split = CONSTMELODY.Split( TwitchChatVS.LobbySongs[ v ]:GetSongDir(), '/' )
                 local song_dir = song_dir_split[ #song_dir_split-1 ] .. '/' .. song_dir_split[ #song_dir_split ]
                 GAMESTATE:ApplyGameCommand('Song,'..song_dir)
                 GAMESTATE:ApplyGameCommand('style,versus')
-                print( song_dir )
-                --
                 MESSAGEMAN:Broadcast('Fade')
             end)
 
-            --
-
-            --self:cmd('sleep,0.02;queuecommand,Update')
         end"
     />
 
@@ -92,92 +81,64 @@
         Font="_misobold white"
         Text="Voting has started!"
         InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.25+20;shadowlength,1;vertalign,bottom"
-        OnCommand="%function(self)
-            tcvs_lobby_spinTimer=0
-            tcvs_lobby_endCurr = 2
-            self:queuecommand('Update')
-        end"
-        UpdateCommand="%function(self)
-            self:zoom(1 + math.abs( math.sin(tcvs_lobby_spinTimer)*0.08 ))
-            tcvs_lobby_spinTimer=tcvs_lobby_spinTimer+0.1
-            self:cmd('sleep,0.02;queuecommand,Update')
-        end"
     />
 
     <!-- timer -->
     <Layer
-        Font="_eurostile outline"
-        Text="69"
-        InitCommand="xy,10,10;horizalign,left;vertalign,top;zoom,2"
+		Type="Quad"
         OnCommand="queuecommand,Set" SetCommand="%function(self)
-            tcvs_lobby_timer= stitch('config').TCVS_VotingTime
+			self:aux( TwitchChatVS.VotingTime )
 
-            self:settext(tcvs_lobby_timer)
+			self:xy( SCREEN_CENTER_X, 0 )
+			self:SetWidth( SCREEN_WIDTH )
+			self:SetHeight( 20 )
+			self:diffuse( ColorRGB(0) )
+			self:cropright(0)
 
-            self:sleep(1)
             self:queuecommand('Update')
         end"
         UpdateCommand="%function(self)
 
-            tcvs_lobby_timer=tcvs_lobby_timer-1
+			self:aux( self:getaux() - 0.02 )
 
-            if (tcvs_lobby_timer<1) then
-            
+            if self:getaux() < 0 then
                 MESSAGEMAN:Broadcast('Override')
-
             else
-
-                if tcvs_lobby_timer==9 then
-                    self:diffuse(1,0.5,0.5,1)
-                end
-
-                self:settext(tcvs_lobby_timer)
-
-                self:cmd('zoom,2.4;decelerate,0.2;zoom,2')
-
-                self:cmd('sleep,1;queuecommand,Update')
-
+				self:cropright( 1-( self:getaux() / TwitchChatVS.VotingTime ) )
+				self:sleep(0.02)
+				self:queuecommand('Update')
             end
             
         end"
         StepP1Action1PressMessageCommand="%function(self)
             self:stoptweening()
-            tcvs_lobby_endCurr=3
             External:add_buffer( TwitchChatVS.Flag, {1,3,1} )
-            MESSAGEMAN:Broadcast('Override')
+			self:queuemessage('Override')
         end"
         StepP1Action2PressMessageCommand="%function(self)
             self:stoptweening()
-            tcvs_lobby_endCurr=3
             External:add_buffer( TwitchChatVS.Flag, {1,3,2} )
-            MESSAGEMAN:Broadcast('Override')
+			self:queuemessage('Override')
         end"
         StepP1Action3PressMessageCommand="%function(self)
             self:stoptweening()
-            tcvs_lobby_endCurr=3
             External:add_buffer( TwitchChatVS.Flag, {1,3,3} )
-            MESSAGEMAN:Broadcast('Override')
+			self:queuemessage('Override')
         end"
         StepP1Action4PressMessageCommand="%function(self)
             self:stoptweening()
-            tcvs_lobby_endCurr=3
             External:add_buffer( TwitchChatVS.Flag, {1,3,4} )
-            MESSAGEMAN:Broadcast('Override')
+			self:queuemessage('Override')
         end"
         StepP1Action5PressMessageCommand="%function(self)
             self:stoptweening()
-            tcvs_lobby_endCurr=3
             External:add_buffer( TwitchChatVS.Flag, {1,3,5} )
-            MESSAGEMAN:Broadcast('Override')
+			self:queuemessage('Override')
         end"
         OverrideMessageCommand="%function(self)
-            self:settext('0')
+			self:stoptweening()
             self:accelerate(0.4)
-            self:x(-40)
-            --
-            --GAMESTATE:SetExternal(1,1)
-            --GAMESTATE:SetExternal(2,1) -- send
-            --GAMESTATE:SetExternal(3,tcvs_lobby_endCurr) -- finish timer
+            self:y(-20)
             External:add_buffer( TwitchChatVS.Flag, {1,2} ) -- Screen: Lobby, Action: Finish
         end"
     />
@@ -187,6 +148,7 @@
         OnCommand="queuecommand,Set"
         SetCommand="%function(self)
             local s = SONGMAN:GetAllSongs()
+
             -- Filter to only grab Dance Single songs
             local ns = {}
             for i,v in pairs(s) do
@@ -205,13 +167,14 @@
                 end
             end
             s = ns
-            --
+            
             if table.getn(s)<8 then
                 SCREENMAN:SystemMessage('Not enough songs! At least 9 singles songs are needed')
                 SCREENMAN:SetNewScreen('ScreenLove')
                 return
             end
-            --
+
+            -- randomize
             local function r(t)
                 local nt=t
                 for i=table.getn(nt),1,-1 do
@@ -220,71 +183,61 @@
                 end
                 return nt
             end
-            --
             s=r(s)
-            tcvs_lobby_songs = {s[1], s[2], s[3], s[4], s[5]}
-            tcvs_is_modded = {false,false,false,false,false}
+
+            TwitchChatVS.LobbySongs = {s[1], s[2], s[3], s[4], s[5]}
+            TwitchChatVS.IsModded = {false,false,false,false,false}
             for i=1,5 do
-                local files = { GAMESTATE:GetFileStructure( tcvs_lobby_songs[i]:GetSongDir() ) }
+                local files = { GAMESTATE:GetFileStructure( TwitchChatVS.LobbySongs[i]:GetSongDir() ) }
                 for k,v in pairs(files) do
                     if table.getn(CONSTMELODY.Split( v, '.' ))==1 then
-                        tcvs_is_modded[i] = true
+                        TwitchChatVS.IsModded[i] = true
                         break
                     end
                 end
 
-                _G['tcvs_lobby_song'..i]:settext(i..' - [' .. tcvs_lobby_songs[i]:GetDisplayMainTitle() .. '] (0) '.. (tcvs_is_modded[i] and '[MODS]' or ''))
+                TwitchChatVS.LobbyActors[ i ]:settext(i..' - [' .. TwitchChatVS.LobbySongs[i]:GetDisplayMainTitle() .. '] (0) '.. (TwitchChatVS.IsModded[i] and '[MODS]' or ''))
             end
         end"
     />
     <Layer
         Type="Quad"
-        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y+35;zoomto,SCREEN_WIDTH,300;diffuse,0,0,0,0.2"
+        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y+35;zoomto,SCREEN_WIDTH,300;diffuse,0,0,0,0.4"
     />
     <Layer
         Font="_misoreg"
         Text="1 - [pee pee poo poo moo]"
-        Var="tcvs_lobby_song1"
-        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*0);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6"
+        Var="TwitchChatVS.LobbyActors[ 1 ]"
+        InitCommand="diffusealpha,0;xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*0);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6;queuecommand,Spawn"
+		SpawnCommand="addx,10;diffusealpha,0;sleep,0;decelerate,0.5;diffusealpha,1;addx,-10"
     />
     <Layer
         Font="_misoreg"
         Text="2 - [pee pee poo poo moo]"
-        Var="tcvs_lobby_song2"
-        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*1);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6"
+        Var="TwitchChatVS.LobbyActors[ 2 ]"
+        InitCommand="diffusealpha,0;xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*1);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6;queuecommand,Spawn"
+		SpawnCommand="addx,10;diffusealpha,0;sleep,0.1;decelerate,0.5;diffusealpha,1;addx,-10"
     />
     <Layer
         Font="_misoreg"
         Text="3 - [pee pee poo poo moo]"
-        Var="tcvs_lobby_song3"
-        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*2);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6"
+        Var="TwitchChatVS.LobbyActors[ 3 ]"
+        InitCommand="diffusealpha,0;xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*2);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6;queuecommand,Spawn"
+		SpawnCommand="addx,10;diffusealpha,0;sleep,0.2;decelerate,0.5;diffusealpha,1;addx,-10"
     />
     <Layer
         Font="_misoreg"
         Text="4 - [pee pee poo poo moo]"
-        Var="tcvs_lobby_song4"
-        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*3);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6"
+        Var="TwitchChatVS.LobbyActors[ 4 ]"
+        InitCommand="diffusealpha,0;xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*3);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6;queuecommand,Spawn"
+		SpawnCommand="addx,10;diffusealpha,0;sleep,0.3;decelerate,0.5;diffusealpha,1;addx,-10"
     />
     <Layer
         Font="_misoreg"
         Text="5 - [pee pee poo poo moo]"
-        Var="tcvs_lobby_song5"
-        InitCommand="xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*4);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6"
-    />
-
-    <!-- speedmod option -->
-    <Layer
-        Font="_misoreg"
-        Text="SpeedMod::2.5x"
-        InitCommand="xy,SCREEN_CENTER_X*1.8,SCREEN_CENTER_Y*0.1;shadowlength,1"
-        StepP1LeftPressMessageCommand="%function(self)
-            tcvs_lobby_speedmod=tcvs_lobby_speedmod-0.1
-            self:settext('SpeedMod\n'..tcvs_lobby_speedmod..'x')
-        end"
-        StepP1RightPressMessageCommand="%function(self)
-            tcvs_lobby_speedmod=tcvs_lobby_speedmod+0.1
-            self:settext('SpeedMod\n'..tcvs_lobby_speedmod..'x')
-        end"
+        Var="TwitchChatVS.LobbyActors[ 5 ]"
+        InitCommand="diffusealpha,0;xy,SCREEN_CENTER_X*0.2,SCREEN_CENTER_Y-100+(60*4);horizalign,left;shadowlength,2;maxwidth,SCREEN_WIDTH*0.6;queuecommand,Spawn"
+		SpawnCommand="addx,10;diffusealpha,0;sleep,0.4;decelerate,0.5;diffusealpha,1;addx,-10"
     />
 
     <!-- water merk -->
@@ -307,7 +260,7 @@
             GAMESTATE:JoinPlayer(1)
             External:remove_hook( TwitchChatVS.Flag, 'lobby vote' )
             External:remove_hook( TwitchChatVS.Flag, 'lobby timer finished' )
-            self:cmd('sleep,2;decelerate,1;diffusealpha,1;sleep,1;queuecommand,NewScreen')
+            self:cmd('finishtweening;sleep,2;decelerate,1;diffusealpha,1;queuecommand,NewScreen')
         end"
         NewScreenMessageCommand="%function(self)
             GAMESTATE:ApplyGameCommand('screen,ScreenTCVSDifficulty')

@@ -23,8 +23,8 @@ FailOverlay = 2
 -- Hides song title and banner in ScreenEdit
 EditorShowSongTitle=true
 
-TCVS_VotingTime = 30
-TCVS_ModQueueLimit = 6
+-- TCVS_VotingTime = 30
+-- TCVS_ModQueueLimit = 6
 
 -- Debug: Lua heap viewer
 ViewGC = false

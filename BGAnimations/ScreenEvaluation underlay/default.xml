@@ -56,12 +56,11 @@
 		InitCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+115;;ZoomToWidth,278;ZoomToHeight,109"
 		OnCommand="ztest,1;diffusealpha,0;linear,0.6;diffusealpha,1"
 	/>
-	<Layer File="@VocalizePath()..'read.xml'" Command="sleep,3;queuecommand,Voice" />
 
 	<Aux
-		InitCommand="%function(self)
+		OnCommand="%function(self)
 			External:remove_hook( TwitchChatVS.Flag, 'mod voting' )
-			External:add_hook( TwitchChatVS.Flag, {3,1}  ) -- Screen: Evaluation, Action: Finished Song
+			External:add_buffer( TwitchChatVS.Flag, {3,1}  ) -- Screen: Evaluation, Action: Finished Song
 		end"
 	/>
 </children></ActorFrame>

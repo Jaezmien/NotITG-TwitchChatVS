@@ -16,6 +16,11 @@ local show = {
     end
 }
 
+function _G.cls()
+    event.Call("clear")
+    return true
+end
+
 function _G.Trace(msg)
     show.Trace(msg)
     event.Call("show", msg)
@@ -134,7 +139,25 @@ function show:__call( ... )
     end
     return print(unpack(arg))
 end
-
-_G.show = show
+function _G.show(...)
+    if arg.n == 1 then
+        local v = arg[1]
+        local c = type(v)
+        if c == "table" or c == "userdata" then
+            return show.table(v, event.Call("show deep") and 0)
+        end
+    end
+    return print(unpack(arg))
+end
+function _G.show_deep(...)
+    if arg.n == 1 then
+        local v = arg[1]
+        local c = type(v)
+        if c == "table" or c == "userdata" then
+            return show.table(v, 1)
+        end
+    end
+    return print(unpack(arg))
+end
 
 return setmetatable(show, show)

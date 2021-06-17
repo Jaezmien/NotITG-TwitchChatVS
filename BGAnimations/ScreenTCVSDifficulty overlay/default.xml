@@ -2,15 +2,14 @@
     <Aux
         InitCommand="%function(self)
 
-            tcvs_difficulty_curr = 1
+			TwitchChatVS.SelectedDifficulty = 1
             InitializeMods();
             
         end"
 
         TwitchDisconnectMessageCommand="%function(self)
             SCREENMAN:SystemMessage('Console Disconnected')
-
-            SCREENMAN:SetNewScreen('ScreenTitleMenu')
+            GAMESTATE:ApplyGameCommand('screen,ScreenTitleMenu')
         end"
 
         OnCommand="queuecommand,Update"
@@ -19,67 +18,173 @@
             self:cmd('sleep,0.02;queuecommand,Update')
         end"
     />
+
     <!-- -->
-    <Layer
-        Font="_misoreg"
-        Text="Choose a difficulty!"
-        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.2;shadowlength,2"
-    />
 
-    <Layer
-        Font="_wendy white"
-        Text="pee pee poo poo"
-        InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y;zoom,0.5"
-        OnCommand="queuecommand,Set"
-        SetCommand="%function(self)
-            local f = {'Beginner','Easy','Medium','Hard','Challenge'}
-            --
-            local st = f[ tcvs_song_difficulties[tcvs_difficulty_curr]:GetDifficulty() + 1 ]
-            --
-            self:settext(st ..' - '.. tcvs_song_difficulties[tcvs_difficulty_curr]:GetMeter())
-            --
-            GAMESTATE:ApplyGameCommand('Style,Versus')
-            GAMESTATE:ApplyGameCommand('Steps,'..st)
-            GAMESTATE:ApplyGameCommand('PlayMode,Regular')
-            MESSAGEMAN:Broadcast('ShowArrows')
-        end"
-        StepP1LeftPressMessageCommand="%function(self)
-            if tcvs_difficulty_curr-1>0 then
-                tcvs_difficulty_curr=tcvs_difficulty_curr-1
-                --
-                self:queuecommand('Set')
-                MESSAGEMAN:Broadcast('ShowArrows')
-            end
-        end"
-        StepP1RightPressMessageCommand="%function(self)
-            if tcvs_difficulty_curr+1<=table.getn(tcvs_song_difficulties) then
-                tcvs_difficulty_curr=tcvs_difficulty_curr+1
-                --
-                self:queuecommand('Set')
-                MESSAGEMAN:Broadcast('ShowArrows')
-            end
-        end"
-        StepP1UpPressMessageCommand="%function(self) GAMESTATE:ApplyGameCommand('screen,ScreenGameplay'); end"
-    />
+	<Layer Type="Quad" InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y+120;zoomto,SCREEN_WIDTH,64" OnCommand="diffuse,0,0,0,0.4"/>
 
-    <Layer
-		File="arrow"
-		InitCommand="x,80;y,SCREEN_CENTER_Y"
-		MenuLeftP1MessageCommand="playcommand,Blink"
-		MenuLeftP2MessageCommand="playcommand,Blink"
-		ShowArrowsMessageCommand="%function(self)
-            if table.getn(tcvs_song_difficulties)==1 then self:hidden(1); return end
-            self:hidden( tcvs_difficulty_curr-1>0 and 0 or 1 )
-        end"
-	/>
+	<!-- Difficulty -->
+    <Layer Type="ActorFrame" InitCommand="xy,SCREEN_CENTER_X*0.6,SCREEN_CENTER_Y+120"><children>
+
+		<Layer
+			Font="_misoreg"
+			Text="Difficulty (&UP; & &DOWN;)"
+			InitCommand="y,-80;shadowlength,2"
+			OnCommand="%function(self)
+				if table.getn( TwitchChatVS.SongDifficulties ) < 2 then
+					self:settext( 'Difficulty' )
+				end
+			end"
+		/>
+		<Layer
+			Font="_wendy white"
+			Text="pee pee poo poo"
+			InitCommand="zoom,0.5"
+			OnCommand="queuecommand,Set"
+			SetCommand="%function(self)
+				local f = {'Beginner','Easy','Medium','Hard','Challenge'}
+				
+				local st = f[ TwitchChatVS.SongDifficulties[ TwitchChatVS.SelectedDifficulty ]:GetDifficulty() + 1 ]
+				self:settext(st ..' - '.. TwitchChatVS.SongDifficulties[ TwitchChatVS.SelectedDifficulty ]:GetMeter())
+				
+				GAMESTATE:ApplyGameCommand('Style,Versus')
+				GAMESTATE:ApplyGameCommand('Steps,'..st)
+				GAMESTATE:ApplyGameCommand('PlayMode,Regular')
+				MESSAGEMAN:Broadcast('ShowArrows')
+			end"
+			StepP1DownPressMessageCommand="%function(self)
+				if TwitchChatVS.SelectedDifficulty-1>0 then
+				TwitchChatVS.SelectedDifficulty=TwitchChatVS.SelectedDifficulty-1
+				self:queuecommand('Set')
+				MESSAGEMAN:Broadcast('ShowArrows')
+				end
+			end"
+			StepP1UpPressMessageCommand="%function(self)
+				if TwitchChatVS.SelectedDifficulty+1<=table.getn(TwitchChatVS.SongDifficulties) then
+				TwitchChatVS.SelectedDifficulty=TwitchChatVS.SelectedDifficulty+1
+				self:queuecommand('Set')
+				MESSAGEMAN:Broadcast('ShowArrows')
+				end
+			end"
+		/>
+
+		<Layer
+			File="arrow"
+			InitCommand="x,-160;rotationz,-90"
+			StepP1DownPressMessageCommand="playcommand,Blink"
+			StepP2DownPressMessageCommand="playcommand,Blink"
+			ShowArrowsMessageCommand="%function(self)
+				if table.getn(TwitchChatVS.SongDifficulties)==1 then self:hidden(1); return end
+				self:hidden( TwitchChatVS.SelectedDifficulty-1>0 and 0 or 1 )
+			end"
+		/>
+		<Layer
+			File="arrow"
+			InitCommand="x,160;RotationZ,90"
+			StepP1UpPressMessageCommand="playcommand,Blink"
+			StepP2UpPressMessageCommand="playcommand,Blink"
+			ShowArrowsMessageCommand="%function(self)
+				if table.getn(TwitchChatVS.SongDifficulties)==1 then self:hidden(1); return end
+				self:hidden( TwitchChatVS.SelectedDifficulty+1<=table.getn(TwitchChatVS.SongDifficulties) and 0 or 1 )
+			end"
+		/>
+
+	</children></Layer>
+
+	<!-- Speed mod -->
+	<Layer Type="ActorFrame" InitCommand="xy,SCREEN_CENTER_X*1.6,SCREEN_CENTER_Y+120"><children>
+
+		<Layer
+			Font="_misoreg"
+			Text="XMod (&LEFT; & &RIGHT;)"
+			InitCommand="y,-80;shadowlength,2"
+		/>
+
+		<Layer
+			Font="_wendy white"
+			Text="2.5x"
+			InitCommand="zoom,0.5"
+			OnCommand="%function(self)
+				TwitchChatVS.SpeedMod = 2.5
+			end"
+			StepP1LeftPressMessageCommand="%function(self)
+				TwitchChatVS.SpeedMod = TwitchChatVS.SpeedMod-0.1
+				self:settext(TwitchChatVS.SpeedMod .. 'x')
+				self:playcommand( 'Bop' )
+			end"
+			StepP1RightPressMessageCommand="%function(self)
+				TwitchChatVS.SpeedMod = TwitchChatVS.SpeedMod+0.1
+				self:settext(TwitchChatVS.SpeedMod .. 'x')
+				self:playcommand( 'Bop' )
+			end"
+			BopCommand="finishtweening;zoom,0.7;decelerate,0.5;zoom,0.5"
+		/>
+
+	</children></Layer>
+
+	<!-- Song Info -->
 	<Layer
-		File="arrow"
-		InitCommand="x,SCREEN_WIDTH-80;y,SCREEN_CENTER_Y;RotationZ,180"
-		MenuRightP1MessageCommand="playcommand,Blink"
-		MenuRightP2MessageCommand="playcommand,Blink"
-		ShowArrowsMessageCommand="%function(self)
-            if table.getn(tcvs_song_difficulties)==1 then self:hidden(1); return end
-            self:hidden( tcvs_difficulty_curr+1<=table.getn(tcvs_song_difficulties) and 0 or 1 )
-        end"
-	/>
+		Type="ActorFrame"
+		InitCommand="xy,SCREEN_CENTER_X,SCREEN_CENTER_Y*0.4"
+		OnCommand="%function(self)
+			local song = GAMESTATE:GetCurrentSong()
+
+			-- Banana
+			if song:GetBannerPath() then self:GetChild('Banner'):Load( song:GetBannerPath() ) end
+			self:GetChild('Banner'):SetWidth( 418 ); self:GetChild('Banner'):SetHeight( 164 )
+			self:GetChild('Banner'):zoom( 0.8 )
+
+			-- Tit
+			self:GetChild('Song Title'):settext( song:GetDisplayMainTitle() )
+			self:GetChild('Song Title'):shadowlength(2)
+			self:GetChild('Song Title'):y( 80 )
+
+			-- Sub tit
+			self:GetChild('Song Subtitle'):settext( song:GetDisplaySubTitle() )
+			self:GetChild('Song Subtitle'):shadowlength(2)
+			self:GetChild('Song Subtitle'):zoom( 0.8 )
+			self:GetChild('Song Subtitle'):y( 115 )
+
+			-- moosik
+			if TwitchChatVS.Volume > 0 then
+				self:GetChild('Song Preview'):load( song:GetMusicPath() )
+				self:GetChild('Song Preview'):queuecommand('Start')
+			end
+
+		end"
+	><children>
+		<Layer Type="Quad" InitCommand="basezoomx,0.8;basezoomy,0.8;zoomto,418,164;diffuse,0,0,0,1"/>
+		<Layer Type="Sprite" File="banner" Name="Banner"/>
+		<Layer Type="BitmapText" Font="_misoreg" Text="" Name="Song Title"/>
+		<Layer Type="BitmapText" Font="_misoreg" Text="" Name="Song Subtitle"/>
+
+		<Layer Type="ActorSound" File="donkabus.ogg" Name="Song Preview"
+			StartCommand="%function(self)
+				local song = GAMESTATE:GetCurrentSong()
+				self:start()
+				self:get():volume( (TwitchChatVS.Volume/100) )
+				self:get():SetSoundPosition( song:GetSampleStartSeconds() )
+				self:queuecommand('Update')
+			end"
+			UpdateCommand="%function(self)
+				local song = GAMESTATE:GetCurrentSong()
+				local pos = self:get():GetSoundPosition()
+				local pos_end = song:GetSampleStartSeconds() + song:GetSampleLengthSeconds()
+
+				if pos >= pos_end-1 then
+					local val = pos_end - pos
+					self:get():volume( (TwitchChatVS.Volume/100) * val )
+				end
+
+				if pos >= pos_end then
+					self:stop()
+					self:queuecommand('Start')
+				else
+					self:sleep(0.01)
+					self:queuecommand('Update')
+				end
+			end"
+			StepP1MenuStartMessageCommand="stoptweening;stop"
+		/>
+	</children></Layer>
 </children></ActorFrame>

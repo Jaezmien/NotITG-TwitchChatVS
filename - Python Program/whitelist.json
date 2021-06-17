@@ -27,7 +27,7 @@
         "range": [-200, 200]
     },
     "mini": {
-        "range": [-200, 200]
+        "range": [-150, 150]
     },
     "flip": {
         "range": [-200, 200]
@@ -42,6 +42,9 @@
         "range": [-200, 200]
     },
     "bumpy": {
+        "range": [-200, 200]
+    },
+	"bumpyx": {
         "range": [-200, 200]
     },
     "beat": {
@@ -62,7 +65,8 @@
         "range": [-200, 200]
     },
     "stealth": {
-        "range": [-50, 50]
+        "range": [-50, 50],
+		"defaultPercentage": 50
     },
     "blink": {
         "range": [-200, 200]
@@ -85,7 +89,7 @@
         "range": [-200, 200]
     },
     "centered": {
-        "range": [0, 50],
+        "range": [0, 100],
         "defaultPercentage": 50
     },
     "dark": {
@@ -109,14 +113,29 @@
     "noteskew": {
         "range": [-100,100]
     },
+	"noteskewx": {
+        "range": [-100,100]
+    },
+	"noteskewy": {
+        "range": [-100,100]
+    },
+	"skewx": {
+        "range": [-100,100]
+    },
+	"skewy": {
+        "range": [-100,100]
+    },
     "arrowpath": {
         "range": [0, 100]
     },
+	"tiny": {
+        "range": [-150, 150]
+    },
     "tinyx": {
-        "range": [0, 200]
+        "range": [-200, 200]
     },
     "tinyy": {
-        "range": [0, 200]
+        "range": [-200, 200]
     },
     "tandrunk": {
         "range": [-200, 200]
@@ -174,5 +193,57 @@
     },
     "parabolaz": {
         "range": [-200, 200]
-    }
+    },
+	"longholds": {
+        "range": [-200, 200]
+    },
+	"cosec": {
+        "nonzeroPercentage": true
+    },
+	"asymptote": {
+        "range": [-200, 200]
+    },
+	"wireframe": {
+        "range": [0,100]
+    },
+	"zoom": {
+        "range": [50, 150],
+		"defaultPercentage": 150
+    },
+	"zoomx": {
+        "range": [50, 150],
+		"defaultPercentage": 150
+    },
+	"zoomy": {
+        "range": [50, 150],
+		"defaultPercentage": 150
+    },
+	"zoomz": {
+        "range": [-200, 200],
+		"defaultPercentage": 150
+    },
+	"distant": {
+        "range": [-200, 200]
+    },
+	"hallway": {
+        "range": [-200, 200]
+    },
+	"incoming": {
+        "range": [-200, 200]
+    },
+	"space": {
+        "range": [-200, 200]
+    },
+	"movex": {
+		"range": [-200, 200],
+		"enableColumnSpecific": true
+	},
+	"movey": {
+		"range": [-200, 200],
+		"enableColumnSpecific": true
+	},
+	"movez": {
+		"range": [-200, 200],
+		"enableColumnSpecific": true
+	}
 }

@@ -81,7 +81,7 @@ local melody = CONSTMELODY
         for i=1,string.len(str) do
             local l = string.sub(str,i,i);
             if l ~= sep then s = s..l -- If not encountered split, add to local string
-            elseif i == string.len(str) and s ~= "" then t[c] = s; s=""; -- If end and s is not empty, insert to local table
+            elseif i == string.len(str) and s ~= "" then t[c] = s; s = ""; -- If end and s is not empty, insert to local table
             else t[c] = s; c = c + 1; s = ""; -- If encountered split, add to table
             end
         end
@@ -128,24 +128,23 @@ local melody = CONSTMELODY
         ['V1']     = 20161226,
         ['V2']     = 20170405,
         ['V3']     = 20180617,
-        ['V3.1']   = 20180909,
+        ['V3.1']   = 20180827,
         ['V4']     = 20200112,
         ['V4.0.1'] = 20200126,
-
         ['V4.1']   = 20200402, -- All versions are welcome, except do_not
+		['4.2']    = 20210420, -- nice
     }
     melody.GetBuildVersion = function()
         if not FUCK_EXE then return nil end
-        local versions = {'V1','V2','V3','V3.1','V4','V4.0.1','V4.1'}
 
         local version_string = 'V1'
         local version_date = melody.BuildVersions[ version_string ]
 
-        for i,v in pairs(versions) do
-            if tonumber(GAMESTATE:GetVersionDate()) >= melody.BuildVersions[v]  then
+		for k,v in pairs(melody.BuildVersions) do
+            if tonumber(GAMESTATE:GetVersionDate()) >= v  then
                 
-                version_string = v
-                version_date = melody.BuildVersions[v]
+                version_string = k
+                version_date = v
 
             end
         end
@@ -173,11 +172,10 @@ local melody = CONSTMELODY
         if not melody.Profile.Profile(0) then return {} end
         if not melody.Profile.Profile(0).Melody then
             melody.Profile.Profile(0).Melody = {
-                -- Defaults
                 Options_ScreenStageOptions=false,
                 Options_EvaluationMusic=true,
                 Options_SelectMusicPony=true,
-                Options_ProgressBar=false,
+                Options_ProgressBar=false
             }
         end
         return melody.Profile.Profile(0).Melody
@@ -266,7 +264,11 @@ local melody = CONSTMELODY
         elseif x < -6*n then
             x = x+12*n
         end
-        local s = scale(math.abs(x),0,4*n,3,-1)
+
+        -- this was bothering me for quite awhile
+        local screen_mult = ( ( ( SCREEN_WIDTH/640 ) - 1 ) * 1.2 ) + 1
+
+        local s = scale(math.abs(x*(2/screen_mult)),0,4*n,3,-1)
         local z = clamp(s,1,3)
         z = scale(z,1,3,1,1.5)
         s = clamp(s,0,maxClamp) 
@@ -279,7 +281,7 @@ local melody = CONSTMELODY
 
         if math.abs(offset) <= 1 then
             local t = 1 - math.abs(offset) -- [0-1]
-            self:zoom(0.5 + (1.15-0.5) * t)
+            self:zoom(0.5 + (1-0.5) * t)
         end
         if melody.Pony.TextFrame and math.abs(offset)<0.5 then
             local newIndex = Moduloop(itemIndex+1,1,12)
@@ -544,17 +546,21 @@ local melody = CONSTMELODY
             end
             return t
         end,
-        FailOption_Choices = {'Off'},
+        FailOption_Choices = {'Off','Random'},
         FailOption = function()
             local t = OptionRowBase('FailOption')
             t.OneChoiceForAllPlayers = true
             t.Choices = melody.ExtraOptions.FailOption_Choices
             t.LoadSelections = function(self, list)
-                if not melody.Profile.Get().Options_FailOption then list[1]=true; return end
-                for i=1, table.getn(self.Choices) do
-                    if melody.Profile.Get().Options_FailOption == i then
-                        list[i] = true
-                        return
+                if not CONSTMELODY.MinimumVersion('V3.1') or not FUCK_EXE then
+                    list[1] = true
+                else
+                    if not melody.Profile.Get().Options_FailOption then list[1]=true; return end
+                    for i=1, table.getn(self.Choices) do
+                        if melody.Profile.Get().Options_FailOption == i then
+                            list[i] = true
+                            return
+                        end
                     end
                 end
             end
@@ -615,7 +621,7 @@ local melody = CONSTMELODY
                 melody.Profile.Get().Options_ProgressBar = list[1];
             end
             return t
-        end,
+        end
     }
 -- Break Time
     melody.BreakTime = {}

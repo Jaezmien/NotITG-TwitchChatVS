@@ -1,217 +1,95 @@
 <ActorFrame> <children>
 
-    <Aux
-        InitCommand="%function(self)
-            tcvs_game_queue = {}
-            tcvs_game_activatedMods = {} -- {when,mod string}
-        end"
-        OnCommand="sleep,1;queuecommand,Shit"
-        ShitCommand="%function(self)
+	<Aux
+		InitCommand="%function(self)
+			TwitchChatVS.GameQueue = {}
+			TwitchChatVS.ActivatedMods = {}  -- { when , mod string }
+		end"
+		OnCommand="sleep,1;queuecommand,Shit"
+		ShitCommand="%function(self)
 
-            if tcvs_enable_mod_voting then
-                External:add_buffer( TwitchChatVS.Flag, {2,1} ) -- Screen: Gameplay, Action: Enable Mod Voting
-                External:add_hook( TwitchChatVS.Flag, 'mod voting', function(buffer)
-                    if buffer[1] ~= 2 then return end -- Screen: Gameplay
-                    if buffer[2] ~= 1 then return end -- Action: Add mod
+			if TwitchChatVS.EnableModVoting then
+				External:add_buffer( TwitchChatVS.Flag, {2,1} ) -- Screen: Gameplay, Action: Enable Mod Voting
+				External:add_hook( TwitchChatVS.Flag, 'mod voting', function(buffer)
+					if buffer[1] ~= 2 then return end -- Screen: Gameplay
+					if buffer[2] ~= 1 then return end -- Action: Add mod
 
-                    local mod_string = ''
-                    local mod_percent = 0
+					local mod_string = ''
+					local mod_percent = 0
 
-                    mod_percent = buffer[3] * (buffer[4] == 1 and -1 or 1)
-                    local mod_string_buffer = {}
-                    for i=5,table.getn(buffer) do
-                        table.insert(mod_string_buffer, buffer[i]+1)
-                    end
-                    mod_string = External.decode( mod_string_buffer )
-                    table.insert( tcvs_game_queue, { GAMESTATE:GetSongTime(), mod_percent, mod_string } )
-                end )
-            end
+					mod_percent = buffer[3] * (buffer[4] == 1 and -1 or 1)
 
-        end"
-    />
+					local mod_string_buffer = {}
+					for i=5,table.getn(buffer) do
+						table.insert(mod_string_buffer, buffer[i]+1)
+					end
+					mod_string = External.decode( mod_string_buffer )
 
-    <Aux
-        OnCommand="queuecommand,Update"
-        TwitchDisconnectMessageCommand="%function(self)
-            SCREENMAN:SystemMessage('Console Disconnected')
+					table.insert( TwitchChatVS.GameQueue, { GAMESTATE:GetSongTime(), mod_percent, mod_string } )
+				end )
+			end
 
-            External:remove_hook( TwitchChatVS.Flag, 'mod voting' )
-            --External:remove_hook( TwitchChatVS.Flag, 'lobby timer finished' )
+		end"
+	/>
 
-            SCREENMAN:SetNewScreen('ScreenTitleMenu')
-        end"
-        UpdateCommand="%function(self)
+	<Aux
+		OnCommand="queuecommand,Update"
+		TwitchDisconnectMessageCommand="%function(self)
+			SCREENMAN:SystemMessage('Console Disconnected')
+			External:remove_hook( TwitchChatVS.Flag, 'mod voting' )
+			GAMESTATE:ApplyGameCommand('screen,ScreenTitleMenu')
+		end"
+		UpdateCommand="%function(self)
 
-            --[[if GAMESTATE:GetExternal(63)==0 then
-                SCREENMAN:SystemMessage('Console Disconnected')
-                SCREENMAN:SetNewScreen('ScreenLove')
-            end
+			if TwitchChatVS.EnableModVoting then
 
-            if SCREENMAN:GetTopScreen():GetChild('Overlay'):GetHidden() then
-                SCREENMAN:GetTopScreen():GetChild('Overlay'):hidden(0)
-            end
+				local b = GAMESTATE:GetSongTime()
 
-            --
+				-- Adding mods from queue if there is a space
+				if table.getn( TwitchChatVS.ActivatedMods ) <= TwitchChatVS.QueueLimit then
 
-            local b = GAMESTATE:GetSongTime()
+					local r = 0
+					for i,v in pairs( TwitchChatVS.GameQueue ) do
+						table.insert( TwitchChatVS.ActivatedMods ,v)
+						--
+						SCREENMAN:SystemMessage('Activated '.. v[2] ..'% '.. v[3] ..'!')
+						--
+						r=r+1
+						if table.getn( TwitchChatVS.ActivatedMods ) > TwitchChatVS.QueueLimit then break end
+					end
 
-            if GAMESTATE:GetExternal(1)==2 and GAMESTATE:GetExternal(2)==2 then
-                
-                if GAMESTATE:GetExternal(3)==4 then
+					for i=1,r do table.remove( TwitchChatVS.GameQueue ,1) end
+					
+				end
 
-                    local g = 'abcdefghijklmnopqrstuvwxyz0123456789'
+				-- Enabling mods
+				GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype, *-1 zbuffer, *-1 spiralholds')
+				GAMESTATE:ApplyModifiers('*-1 '.. TwitchChatVS.SpeedMod ..'x')
 
-                    local function decodeChar(s) -- pos to char
-                        for i=1,string.len(g) do
-                            if i==s then
-                                return string.sub(g,i,i)
-                            end
-                        end
-                        return nil
-                    end
-                    
-                    local m = ''
-                    local len = GAMESTATE:GetExternal(4)
-                    local per = GAMESTATE:GetExternal(5) * ( GAMESTATE:GetExternal(6)==1 and -1 or 1 )
+				local t = {}
+				for i,v in pairs( TwitchChatVS.ActivatedMods ) do
+					-- {time_start, percent, mod}
+					if b>=v[1] then
 
-                    for i=7,6+len do
-                        m=m..decodeChar(GAMESTATE:GetExternal(i))
-                    end
+						if b<=v[1]+16 then
 
-                    table.insert(tcvs_game_queue,{1,b,m,per})
+							GAMESTATE:ApplyModifiers('*1 '.. v[2] ..' '.. v[3])
+							table.insert(t,v)
 
-                    for i=1,6+len do
-                        GAMESTATE:SetExternal(i,0)
-                    end
+						end
 
-                elseif GAMESTATE:GetExternal(3)==5 then
+					else
+						table.insert(t,v)
+					end
 
-                    local flp = GAMESTATE:GetExternal(4) * ( GAMESTATE:GetExternal(5)==1 and -1 or 1 )
-                    local inv = GAMESTATE:GetExternal(6) * ( GAMESTATE:GetExternal(7)==1 and -1 or 1 )
+				end
+				TwitchChatVS.ActivatedMods  = t
 
-                    table.insert(tcvs_game_queue,{2,b,flp,inv})
+			end
 
-                    for i=1,7 do
-                        GAMESTATE:SetExternal(i,0)
-                    end
-
-                end
-
-            end
-
-            --
-
-            if table.getn(tcvs_game_activatedMods) < 6 then
-
-                local r = 0
-                for i,v in pairs(tcvs_game_queue) do
-                    table.insert(tcvs_game_activatedMods,v)
-                    --
-                    if v[1]==1 then
-                        SCREENMAN:SystemMessage('Activated '.. v[4] ..'% '.. v[3] ..'!')
-                    else
-                        SCREENMAN:SystemMessage('Activated Switcheroo!')
-                    end
-                    --
-                    r=r+1
-                    if table.getn(tcvs_game_activatedMods) > 4 then
-                        break
-                    end
-                end
-
-                for i=1,r do table.remove(tcvs_game_queue,1) end
-                
-            end
-
-            --
-
-            GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype')
-
-            --
-            GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x') -- idk how to make this into an option you can change (easily)
-            --
-
-            local t = {}
-            local active = 'Activated Mods:'
-            for i,v in pairs(tcvs_game_activatedMods) do
-
-                if b>=v[2] then
-
-                    if b<=v[2]+16 then
-
-                        if v[1]==1 then
-                            GAMESTATE:ApplyModifiers('*1 '.. v[4] ..' '.. v[3])
-                            active = active..'\n '.. v[4] ..' '.. v[3]
-                        else
-                            GAMESTATE:ApplyModifiers('*1 '.. v[3] ..' flip, *1 '.. v[4] ..' invert')
-                            active = active..'\n '.. v[3] ..' flip, *1 '.. v[4] ..' invert'
-                        end
-                        table.insert(t,v)
-
-                    end
-
-                else
-                    table.insert(t,v)
-                end
-
-            end
-            tcvs_game_activatedMods = t
-
-            tcvs_game_modList:settext(active)]]
-
-            --
-
-            if tcvs_enable_mod_voting then
-
-                local b = GAMESTATE:GetSongTime()
-
-                -- Adding mods from queue if there is a space
-                if table.getn(tcvs_game_activatedMods) < stitch('config').TCVS_ModQueueLimit then
-
-                    local r = 0
-                    for i,v in pairs(tcvs_game_queue) do
-                        table.insert(tcvs_game_activatedMods,v)
-                        --
-                        SCREENMAN:SystemMessage('Activated '.. v[2] ..'% '.. v[3] ..'!')
-                        --
-                        r=r+1
-                        if table.getn(tcvs_game_activatedMods) > 4 then
-                            break
-                        end
-                    end
-
-                    for i=1,r do table.remove(tcvs_game_queue,1) end
-                    
-                end
-
-                -- Enabling mods
-                GAMESTATE:ApplyModifiers('clearall, *-1 dizzyholds, *-1 reversetype, *-1 beatcap, *-1 approachtype, *-1 zbuffer, *-1 spiralholds')
-                GAMESTATE:ApplyModifiers('*-1 '.. tcvs_lobby_speedmod ..'x')
-
-                local t = {}
-                for i,v in pairs(tcvs_game_activatedMods) do
-                    -- {time_start, percent, mod}
-                    if b>=v[1] then
-
-                        if b<=v[1]+16 then
-
-                            GAMESTATE:ApplyModifiers('*1 '.. v[2] ..' '.. v[3])
-                            table.insert(t,v)
-
-                        end
-
-                    else
-                        table.insert(t,v)
-                    end
-
-                end
-                tcvs_game_activatedMods = t
-
-            end
-
-            self:cmd('sleep,0.02;queuecommand,Update')
-        end"
-    />
+			self:cmd('sleep,0.02;queuecommand,Update')
+		end"
+	/>
 
 </children> </ActorFrame>
 
